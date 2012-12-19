@@ -1,0 +1,2884 @@
+    <HTML> 
+	<HEAD> 
+	    <TITLE>ADVANCED CGI</TITLE> 
+	</HEAD>
+
+	<BODY bgcolor="white">
+
+<a href="../index.html">Perl Conference Tutorial Pages</a>
+<hr>
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#ADVANCED_CGI">ADVANCED CGI</A>
+	<LI><A HREF="#Dynamic_Documents">Dynamic Documents</A>
+	<UL>
+
+		<LI><A HREF="#Making_HTML_look_beautiful">Making HTML look beautiful</A>
+		<LI><A HREF="#Making_HTML_concise">Making HTML concise</A>
+		<LI><A HREF="#Making_Interactive_Forms">Making Interactive Forms</A>
+		<UL>
+
+			<LI><A HREF="#Keeping_State_with_Cookies">Keeping State with Cookies</A>
+		</UL>
+
+	<LI><A HREF="#Creating_Non_HTML_Types">Creating Non-HTML Types</A>
+	<UL>
+
+		<LI><A HREF="#Smart_Redirection">Smart Redirection</A>
+	</UL>
+
+	<LI><A HREF="#File_Uploads">File Uploads</A>
+	<LI><A HREF="#Generating_Pages_from_Databases">Generating Pages from Databases</A>
+	<UL>
+
+		<LI><A HREF="#Some_Background_Info_on_DBI">Some Background Info on DBI</A>
+		<LI><A HREF="#Using_DBI">Using DBI</A>
+		<LI><A HREF="#Kitchen_Catalog_Shopping_Cart_De">Kitchen Catalog/Shopping Cart Demo</A>
+		<UL>
+
+			<LI><A HREF="#Tables_Used_by_the_Application">Tables Used by the Application</A>
+			<LI><A HREF="#The_Catalog_pm_module">The Catalog.pm module</A>
+			<LI><A HREF="#The_Session_pm_module">The Session.pm module</A>
+			<LI><A HREF="#The_ShoppingCart_pm_module">The ShoppingCart.pm module</A>
+			<LI><A HREF="#The_catalog_cgi_Script">The catalog.cgi Script</A>
+			<LI><A HREF="#The_display_cgi_Script">The display.cgi Script</A>
+			<LI><A HREF="#The_order_cgi_Script">The order.cgi Script</A>
+			<LI><A HREF="#Utility_Scripts">Utility Scripts</A>
+		</UL>
+
+		<LI><A HREF="#Important_caveats">Important caveats</A>
+	</UL>
+
+	<LI><A HREF="#Conclusion">Conclusion</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="ADVANCED_CGI">ADVANCED CGI
+
+</A></H1>
+Author: Lincoln Stein <A
+HREF="MAILTO:<lstein@cshl.org>"><lstein@cshl.org></A> Date: 3/15/99
+
+
+<P>
+
+This tutorial contains a collection of CGI scripts that illustrate the four
+basic types of CGI scripting: dynamic documents, document filtering, and
+URL redirection. It also shows a few tricks that you might not have run
+into -- or even thought were possible with CGI.
+
+
+<P>
+
+<P>
+<HR>
+<H1><A NAME="Dynamic_Documents">Dynamic Documents
+
+</A></H1>
+The most familiar use of CGI is to create documents on the fly. They can be
+simple documents, or get incredibly baroque. We won't venture much past the
+early baroque.
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Making_HTML_look_beautiful">Making HTML look beautiful
+
+</A></H2>
+&lt;I&gt; &lt;hate&gt; &lt;HTML&gt; &lt;because&gt; &lt;it's&gt;
+&lt;ugly&gt; &lt;and&gt; &lt;has&gt; &lt;too&gt; &lt;many&gt;
+&lt;$#@*&amp;&gt; &lt;angle&gt; &lt;brackets&gt;. With CGI.pm it's almost
+good to look at. Script 1.1 shows what a nested list looks like with
+CGI.pm.
+
+
+<P>
+
+<STRONG>Script 1.1: vegetables1.pl</STRONG>
+
+
+
+
+<P>
+
+<PRE> #!/usr/bin/perl
+ # Script: vegetables1.pl
+ use CGI::Pretty ':standard';
+ print header,
+    start_html('Vegetables'),
+    h1('Eat Your Vegetables'),
+    ol(
+       li('peas'),
+       li('broccoli'),
+       li('cabbage'),
+       li('peppers',
+          ul(
+             li('red'),
+             li('yellow'),
+             li('green')
+             )
+          ),
+       li('kolrabi'),
+       li('radishes')
+       ),
+    hr,
+    end_html;
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Making_HTML_concise">Making HTML concise
+
+</A></H2>
+But we can do even better than that because CGI.pm lets you collapse
+repeating tags by passing array references to its functions. Script 1.2
+saves some typing, and in so doing, puts off the onset of RSI by months or
+years!
+
+
+<P>
+
+<STRONG>Script 1.2: vegetables2.pl</STRONG>
+
+
+
+
+<P>
+
+<PRE> #!/usr/bin/perl
+ # Script: vegetables2.pl
+ use CGI ':standard';
+ print header,
+    start_html('Vegetables'),
+    h1('Eat Your Vegetables'),
+    ol(
+       li(['peas',
+           'broccoli',
+           'cabbage',
+           'peppers' .
+           ul(['red','yellow','green']),
+           'kolrabi',
+           'radishes'
+       ),
+    hr,
+    end_html;
+</PRE>
+
+<P>
+
+Or how about this one?
+
+
+<P>
+
+<STRONG>Script 1.3: vegetables3.pl</STRONG>
+
+
+
+
+<P>
+
+<PRE> #!/usr/bin/perl
+</PRE>
+
+<P>
+
+<PRE> # Script: vegetables3.pl
+ use CGI::Pretty qw/:standard :html3/;
+</PRE>
+
+<P>
+
+<PRE> print header,
+    start_html('Vegetables'),
+    h1('Vegetables are for the Strong'),
+    table({-border=&gt;undef},
+          caption(strong('When Should You Eat Your Vegetables?')),
+          Tr({-align=&gt;CENTER,-valign=&gt;TOP}, 
+             [
+              th(['','Breakfast','Lunch','Dinner']),
+              th('Tomatoes').td(['no','yes','yes']),
+              th('Broccoli').td(['no','no','yes']),
+              th('Onions').td(['yes','yes','yes'])
+              ]
+             )
+          ),
+    end_html;
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Making_Interactive_Forms">Making Interactive Forms
+
+</A></H2>
+Of course you mostly want to use CGI to create interactive forms. No
+problem! CGI.pm has a full set of functions for both generating the form
+and reading its contents once submitted. Script 1.4 creates a row of radio
+buttons labeled with various colors. When the user selects a button and
+submits the form, the page redraws itself with the selected background
+color. Psychedelic!
+
+
+<P>
+
+<STRONG>Script 1.4: customizable.pl</STRONG>
+
+
+
+
+<P>
+
+<PRE> #!/usr/bin/perl
+ # script: customizable.pl
+ 
+ use CGI::Pretty qw/:standard/;
+ 
+ $color = param('color') || 'white';
+ 
+ print header,
+     start_html({-bgcolor=&gt;$color},'Customizable Page'),
+     h1('Customizable Page'),
+     &quot;Set this page's background color to:&quot;,br,
+     start_form,
+     radio_group(-name=&gt;'color',
+                    -value=&gt;['white','red','green','black',
+                             'blue','silver','cyan'],
+                    -cols=&gt;2),
+     submit(-name=&gt;'Set Background'),
+     end_form,
+     p,
+     hr,
+     end_html;
+ 
+=head1 Making Stateful Forms
+</PRE>
+
+<P>
+
+Many real Web applications are more than a single page. Some may span
+multiple pages and fill-out forms. When the user goes from one page to the
+next, you've got to save the state of the previous page somewhere. A
+convenient and cheap place to put state information is in hidden fields in
+the form itself. Script 2.1 is an example of a loan application with a
+total of five separate pages. Forward and back buttons allows the user to
+navigate between pages. The script remembers all the pages and summarizes
+them up at the end.
+
+
+<P>
+
+<STRONG>Script 2.1: loan.pl</STRONG>
+
+
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ 
+ # script: loan.pl
+ use CGI qw/:standard :html3/;
+ 
+ # this defines the contents of the fill out forms
+ # on each page.
+ @PAGES = ('Personal Information','References','Assets','Review','Confirmation');
+ %FIELDS = ('Personal Information' =&gt; ['Name','Address','Telephone','Fax'],
+           'References'           =&gt; ['Personal Reference 1','Personal Reference 2'],
+           'Assets'               =&gt; ['Savings Account','Home','Car']
+           );
+ # accumulate the field names into %ALL_FIELDS;
+ foreach (values %FIELDS) {
+     grep($ALL_FIELDS{$_}++,@$_);
+ }
+ 
+ 
+ # figure out what page we're on and where we're heading.
+ $current_page = calculate_page(param('page'),param('go'));
+ $page_name = $PAGES[$current_page];
+ 
+ print_header();
+ print_form($current_page)         if $FIELDS{$page_name};
+ print_review($current_page)       if $page_name eq 'Review';
+ print_confirmation($current_page) if $page_name eq 'Confirmation';
+ print end_html;
+ 
+ # CALCULATE THE CURRENT PAGE
+ sub calculate_page {
+     my ($prev,$dir) = @_;
+     return 0 if $prev eq '';   # start with first page
+     return $prev + 1 if $dir eq 'Submit Application';
+     return $prev + 1 if $dir eq 'Next Page';
+     return $prev - 1 if $dir eq 'Previous Page';
+ }
+ 
+ # PRINT HTTP AND HTML HEADERS
+ sub print_header {
+     print header,
+     start_html(&quot;Your Friendly Family Loan Center&quot;),
+     h1(&quot;Your Friendly Family Loan Center&quot;),
+     h2($page_name);
+ }
+ 
+ # PRINT ONE OF THE QUESTIONNAIRE PAGES
+ sub print_form {
+     my $current_page = shift;
+     print &quot;Please fill out the form completely and accurately.&quot;,
+        start_form,
+        hr;
+     draw_form(@{$FIELDS{$page_name}});
+     print hr;
+     print submit(-name=&gt;'go',-value=&gt;'Previous Page') 
+        if $current_page &gt; 0;
+     print submit(-name=&gt;'go',-value=&gt;'Next Page'),
+        hidden(-name=&gt;'page',-value=&gt;$current_page,-override=&gt;1),
+        end_form;
+ }
+ 
+ # PRINT THE REVIEW PAGE
+ sub print_review {
+     my $current_page = shift;
+     print &quot;Please review this information carefully before submitting it. &quot;,
+        start_form;
+     my (@rows);
+     foreach $page ('Personal Information','References','Assets') {
+        push(@rows,th({-align=&gt;LEFT},em($page)));
+        foreach $field (@{$FIELDS{$page}}) {
+            push(@rows,
+                 TR(th({-align=&gt;LEFT},$field),
+                    td(param($field)))
+                 );
+            print hidden(-name=&gt;$field);
+        }
+     }
+     print table({-border=&gt;1},caption($page),@rows),
+        hidden(-name=&gt;'page',-value=&gt;$current_page,-override=&gt;1),
+        submit(-name=&gt;'go',-value=&gt;'Previous Page'),
+        submit(-name=&gt;'go',-value=&gt;'Submit Application'),
+        end_form;
+ }
+ 
+ # PRINT THE CONFIRMATION PAGE
+ sub print_confirmation {
+     print &quot;Thank you. A loan officer will be contacting you shortly.&quot;,
+        p,
+        a({-href=&gt;'../source.html'},'Code examples');
+ }
+ 
+ 
+ # CREATE A GENERIC QUESTIONNAIRE
+ sub draw_form {
+     my (@fields) = @_;
+     my (%fields);
+     grep ($fields{$_}++,@fields);
+     my (@hidden_fields) = grep(!$fields{$_},keys %ALL_FIELDS);
+     my (@rows);
+     foreach (@fields) {
+        push(@rows,
+             TR(th({-align=&gt;LEFT},$_),
+                td(textfield(-name=&gt;$_,-size=&gt;50))
+                )
+             );
+     }
+     print table(@rows);
+ 
+     foreach (@hidden_fields) {
+         print hidden(-name=&gt;$_);
+     }
+ }
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Keeping_State_with_Cookies">Keeping State with Cookies
+
+</A></H3>
+If you want to maintain state even if the user quits the browser and comes
+back again, you can use cookies. Script 2.2 records the user's name and
+color scheme preferences and recreates the page the way the user likes up
+to 30 days from the time the user last used the script.
+
+
+<P>
+
+<STRONG>Script 2.2: preferences.pl</STRONG>
+
+
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ 
+ # file: preferences.pl
+ 
+ use CGI qw(:standard :html3);
+ 
+ # Some constants to use in our form.
+ @colors=qw/aqua black blue fuschia gray green lime maroon navy olive
+     purple red silver teal white yellow/;
+ @sizes=(&quot;&lt;default&gt;&quot;,1..7);
+ 
+ # recover the &quot;preferences&quot; cookie.
+ %preferences = cookie('preferences');
+ 
+ # If the user wants to change the background color or her
+ # name, they will appear among our CGI parameters.
+ foreach ('text','background','name','size') {
+     $preferences{$_} = param($_) || $preferences{$_};
+ }
+ 
+ # Set some defaults
+ $preferences{'background'} = $preferences{'background'} || 'silver';
+ $preferences{'text'} = $preferences{'text'} || 'black';
+ 
+ # Refresh the cookie so that it doesn't expire.
+ $the_cookie = cookie(-name=&gt;'preferences',
+                      -value=&gt;\%preferences,
+                      -path=&gt;'/',
+                      -expires=&gt;'+30d');
+ print header(-cookie=&gt;$the_cookie);
+ 
+ # Adjust the title to incorporate the user's name, if provided.
+ $title = $preferences{'name'} ? 
+     &quot;Welcome back, $preferences{name}!&quot; : &quot;Customizable Page&quot;;
+ 
+ # Create the HTML page.  We use several of the HTML 3.2
+ # extended tags to control the background color and the
+ # font size.  It's safe to use these features because
+ # cookies don't work anywhere else anyway.
+ print start_html(-title=&gt;$title,
+                  -bgcolor=&gt;$preferences{'background'},
+                  -text=&gt;$preferences{'text'}
+                 );
+ 
+ print basefont({-size=&gt;$preferences{size}}) if $preferences{'size'} &gt; 0;
+ 
+ print h1($title);
+ 
+ # Create the form
+ print hr,
+     start_form,
+     
+     &quot;Your first name: &quot;,
+     textfield(-name=&gt;'name',
+               -default=&gt;$preferences{'name'},
+               -size=&gt;30),br,
+     
+     table(
+          TR(
+             td(&quot;Preferred&quot;),
+             td(&quot;Page color:&quot;),
+             td(popup_menu(-name=&gt;'background',
+                           -values=&gt;\@colors,
+                           -default=&gt;$preferences{'background'})
+                ),
+             ),
+          TR(
+             td(''),
+             td(&quot;Text color:&quot;),
+             td(popup_menu(-name=&gt;'text',
+                           -values=&gt;\@colors,
+                           -default=&gt;$preferences{'text'})
+                )
+             ),
+          TR(
+             td(''),
+             td(&quot;Font size:&quot;),
+             td(popup_menu(-name=&gt;'size',
+                           -values=&gt;\@sizes,
+                           -default=&gt;$preferences{'size'})
+                )
+             )
+          ),
+ 
+     submit(-label=&gt;'Set preferences'),
+     end_form,
+     hr,
+     end_html;
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H1><A NAME="Creating_Non_HTML_Types">Creating Non-HTML Types
+
+</A></H1>
+CGI can do more than just produce HTML documents. It can produce any type
+of document that you can output with Perl. This includes GIFs, Postscript
+files, sounds or whatever.
+
+
+<P>
+
+Script 3.1 creates a clickable image map of a colored circle inside a
+square. The script is responsible both for generating the map and making
+the image (using the GD.pm library). It also creates a fill-out form that
+lets the user change the size and color of the image!
+
+
+<P>
+
+<STRONG>Script 3.1: circle.pl</STRONG>
+
+
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ 
+ # script: circle.pl
+ use GD;
+ use CGI qw/:standard Map Area/;
+ 
+ use constant RECTSIZE     =&gt; 100;
+ use constant CIRCLE_RADIUS  =&gt; 40;
+ %COLORS = (
+           'white' =&gt; [255,255,255],
+           'red'   =&gt; [255,0,0],
+           'green' =&gt; [0,255,0],
+           'blue'  =&gt; [0,0,255],
+           'black' =&gt; [0,0,0],
+           'bisque'=&gt; [255,228,196],
+           'papaya whip' =&gt; [255,239,213],
+           'sienna' =&gt; [160,82,45]
+           );
+ 
+ my $draw          = param('draw');
+ my $circle_color  = param('color') || 'bisque';
+ my $mag           = param('magnification') || 1;
+ 
+ if ($draw) {
+     draw_image();
+ } else {
+     make_page()
+ }
+         
+ sub draw_image {
+     # create a new image
+     my $im = new GD::Image(RECTSIZE*$mag,RECTSIZE*$mag);
+ 
+     # allocate some colors
+     my $white = $im-&gt;colorAllocate(@{$COLORS{'white'}});
+     my $black = $im-&gt;colorAllocate(@{$COLORS{'black'}});       
+     my $circlecolor = $im-&gt;colorAllocate(@{$COLORS{$circle_color}});
+ 
+     # make the background transparent and interlaced
+     $im-&gt;transparent($white);
+     $im-&gt;interlaced('true');
+ 
+     # Put a black frame around the picture
+     $im-&gt;rectangle(0,0,RECTSIZE*$mag-1,RECTSIZE*$mag-1,$black);
+ 
+     # Draw the circle
+     $im-&gt;arc(RECTSIZE*$mag/2,RECTSIZE*$mag/2,CIRCLE_RADIUS*$mag*2,CIRCLE_RADIUS*$mag*2,0,360,$black);
+ 
+     # And fill it with circlecolor
+     $im-&gt;fill(RECTSIZE*$mag/2,RECTSIZE*$mag/2,$circlecolor);
+ 
+     # Convert the image to GIF and print it
+     print header('image/gif'),$im-&gt;gif;
+ }
+ 
+ sub make_page {
+     param(-name=&gt;'draw',-value=&gt;1);
+     print header(),
+           start_html(-title=&gt;'Feeling Circular',-bgcolor=&gt;'white'),
+           h1('A Circle is as a Circle Does'),
+           img({-src=&gt;self_url(),-alt=&gt;'a circle',
+               -align=&gt;'LEFT',-usemap=&gt;'#map',
+               -border=&gt;0});
+     print em(param('message')) if param('message');
+     Delete('draw'); 
+     print  start_form,
+            &quot;Magnification: &quot;,radio_group(-name=&gt;'magnification',-values=&gt;[1..4]),br,
+            &quot;Color: &quot;,popup_menu(-name=&gt;'color',-values=&gt;[sort keys %COLORS]),
+            submit(-value=&gt;'Change'),
+            end_form;
+     print Map({-name=&gt;'map'},
+              Area({-shape=&gt;'CIRCLE',
+                    -href=&gt;param(-name=&gt;'message',-value=&gt;&quot;You clicked in the circle&quot;)
+                           ? self_url() : '',
+                    -coords=&gt;join(',',RECTSIZE*$mag/2,RECTSIZE*$mag/2,CIRCLE_RADIUS*$mag),
+                    -alt=&gt;'Circle'}),
+              Area({-shape=&gt;'RECT',
+                    -href=&gt;param(-name=&gt;'message',-value=&gt;&quot;You clicked in the square&quot;)
+                           ? self_url() : '',
+                    -coords=&gt;join(',',0,0,RECTSIZE*$mag,RECTSIZE*$mag),
+                    -alt=&gt;'Square'}));
+     print end_html;
+ }
+ 
+Script 3.2 creates a GIF89a animation.  First it creates a set of
+simple GIFs, then uses the I&lt;combine&gt; program (part of the ImageMagick
+package) to combine them together into an animation.
+</PRE>
+
+<P>
+
+I'm not a good animator, so I can't do anything fancy. But you can!
+
+
+<P>
+
+<STRONG>Script 3.2: animate.pl</STRONG>
+
+
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ 
+ # script: animated.pl
+ use GD;
+ use <A HREF="File::Path">File::Path</A>;
+ 
+ use constant START      =&gt; 80;
+ use constant END        =&gt; 200;
+ use constant STEP       =&gt; 10;
+ use constant COMBINE    =&gt; '/usr/local/bin/convert';
+ @COMBINE_OPTIONS = (-delay =&gt; 5,
+                    -loop  =&gt; 10000);
+ 
+ @COLORS = ([240,240,240],
+           [220,220,220],
+           [200,200,200],
+           [180,180,180],
+           [160,160,160],
+           [140,140,140],
+           [150,120,120],
+           [160,100,100],
+           [170,80,80],
+           [180,60,60],
+           [190,40,40],
+           [200,20,20],
+           [210,0,0]);
+ @COLORS = (@COLORS,reverse(@COLORS));
+ 
+ my @FILES = ();
+ my $dir = create_temporary_directory();
+ my $index = 0;
+ for (my $r = START; $r &lt;= END; $r+=STEP) {
+     draw($r,$index,$dir);
+     $index++;
+ }
+ for (my $r = END; $r &gt; START; $r-=STEP) {
+     draw($r,$index,$dir);
+     $index++;
+ }
+ 
+ # emit the GIF89a
+ $| = 1;
+ print &quot;Content-type: image/gif\n\n&quot;;
+ system COMBINE,@COMBINE_OPTIONS,@FILES,&quot;gif:-&quot;;
+ 
+ rmtree([$dir],0,1);
+ 
+ sub draw{
+     my ($r,$color_index,$dir) = @_;
+     my $im = new GD::Image(END,END);
+     my $white = $im-&gt;colorAllocate(255,255,255);
+     my $black = $im-&gt;colorAllocate(0,0,0);
+     my $color = $im-&gt;colorAllocate(@{$COLORS[$color_index % @COLORS]});
+     $im-&gt;rectangle(0,0,END,END,$white);
+     $im-&gt;arc(END/2,END/2,$r,$r,0,360,$black);
+     $im-&gt;fill(END/2,END/2,$color);
+     my $file = sprintf(&quot;%s/picture.%02d.gif&quot;,$dir,$color_index);
+     open (OUT,&quot;&gt;$file&quot;) || die &quot;couldn't create $file: $!&quot;;
+     print OUT $im-&gt;gif;
+     close OUT;
+     push(@FILES,$file);
+ 
+ }
+ 
+ sub create_temporary_directory {
+     my $basename = &quot;/usr/tmp/animate$$&quot;;
+     my $counter=0;
+     while ($counter &lt; 100) {
+        my $try = sprintf(&quot;$basename.%04d&quot;,$counter);
+        next if -e $try;
+        return $try if mkdir $try,0700;
+     } continue { $counter++; }
+     die &quot;Couldn't make a temporary directory&quot;;
+ }
+ 
+=head1 Document Translation
+</PRE>
+
+<P>
+
+Did you know that you can use a CGI script to translate other documents on
+the fly? No s**t! Script 4.1 is a script that intercepts all four-letter
+words in text documents and stars out the naughty bits. The document itself
+is specified using additional path information. We're a bit over-literal
+about what a four-letter word is, but what's the fun if you can't be
+extravagant?
+
+
+<P>
+
+<STRONG>Script 4.1: naughty.pl</STRONG>
+
+
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ # Script: naughty.pl
+</PRE>
+
+<P>
+
+<PRE> use CGI ':standard';
+ $file = path_translated() || 
+        die &quot;must be called with additional path info&quot;;
+ open (FILE,$file) || die &quot;Can't open $file: $!\n&quot;;
+ print header('text/plain');
+ while (&lt;FILE&gt;) {
+    s/\b(\w)\w{2}(\w)\b/$1**$2/g;
+    print;
+ }
+ close FILE;
+</PRE>
+
+<P>
+
+4.1 won't work on HTML files because the HTML tags will get starred out
+too. If you find it a little limiting to work only on plain-text files,
+script 4.2 uses LWP's HTML parsing functions to modify just the text part
+of an HTML document without touching the tags. The script's a little
+awkward because we have to guess the type of file from the extension, and <EM>redirect</EM> when we're dealing with a non-HTML file. We can do better with <EM>mod_perl</EM>.
+
+
+<P>
+
+<STRONG>Script 4.2: naughty2.pl</STRONG>
+
+
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ 
+ # Script: naughty2.pl
+ package HTML::Parser::FixNaughty;
+ 
+ require HTML::Parser;
+ @ISA = 'HTML::Parser';
+ 
+ sub start {
+     my ($self,$tag,$attr,$attrseq,$origtext) = @_;
+     print $origtext;
+ }
+ sub end {
+     my ($self,$tag) = @_;
+     print &quot;&lt;/$tag&gt;&quot;;
+ }
+ sub text {
+     my ($self,$text) = @_;
+     $text =~ s/\b(\w)\w{2}(\w)\b/$1**$2/g;    
+     print $text;
+ }
+ 
+ 
+ package main;
+ use CGI qw/header path_info redirect path_translated/;
+ 
+ $file = path_translated() || 
+     die &quot;must be called with additional path info&quot;;
+ $file .= &quot;index.html&quot; if $file=~m!/$!;
+ 
+ unless ($file=~/\.html?$/) {
+     print redirect(path_info());
+     exit 0;
+ }
+ 
+ $parser = new HTML::Parser::FixNaughty;
+ print header();
+ $parser-&gt;parse_file($file);
+</PRE>
+
+<P>
+
+A cleaner way to do this is to make naughty2.pl an Apache HANDLER. We can
+make it handle all the HTML documents on our site by adding something like
+this to access.conf:
+
+
+<P>
+
+<PRE>   &lt;Location /&gt;
+     ... blah blah blah other stuff
+     Action text/html /cgi-bin/naughty2.pl
+   &lt;/Location&gt;  
+</PRE>
+
+<P>
+
+Now, whenever an HTML document is requested, it gets passed through the CGI
+script. With this in place, there's no need to check the file type and
+redirect. Cool!
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Smart_Redirection">Smart Redirection
+
+</A></H2>
+There's no need even to create a document with CGI. You can simply
+<EM>redirect</EM> to the URL you want. Script 4.3 chooses a random picture from a directory
+somewhere and displays it. The directory to pick from is specified as
+additional path information, as in:
+
+
+<P>
+
+<PRE>        /cgi-bin/random_pict/banners/egregious_advertising
+</PRE>
+
+<P>
+
+<STRONG>Script 4.3 random_pict.pl</STRONG>
+
+
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ # script: random_pict.pl
+</PRE>
+
+<P>
+
+<PRE> use CGI qw/:standard/;
+ $PICTURE_PATH = path_translated();
+ $PICTURE_URL = path_info();
+ chdir $PICTURE_PATH
+        or die &quot;Couldn't chdir to pictures directory: $!&quot;;
+ @pictures = &lt;*.{jpg,gif}&gt;;
+ $lucky_one = $pictures[rand(@pictures)];
+ die &quot;Failed to pick a picture&quot; unless $lucky_one;
+</PRE>
+
+<P>
+
+<PRE> print redirect(&quot;$PICTURE_URL/$lucky_one&quot;);
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H1><A NAME="File_Uploads">File Uploads
+
+</A></H1>
+Everyone wants to do it. I don't know why. Script 5.1 shows a basic script
+that accepts a file to upload, reads it, and prints out its length and MIME
+type. Windows users should read about <CODE>binmode()</CODE> before they
+try this at home!
+
+
+<P>
+
+<STRONG>Script 5.1 upload.pl</STRONG>
+
+
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ #script: upload.pl
+ 
+ use CGI qw/:standard/;
+ 
+ print header,
+     start_html('file upload'),
+     h1('file upload');
+ print_form()    unless param;
+ print_results() if param;
+ print end_html;
+ 
+ sub print_form {
+     print start_multipart_form(),
+        filefield(-name=&gt;'upload',-size=&gt;60),br,
+        submit(-label=&gt;'Upload File'),
+        end_form;
+ }
+ 
+ sub print_results {
+     my $length;
+     my $file = param('upload');
+     if (!$file) {
+        print &quot;No file uploaded.&quot;;
+        return;
+     }
+     print h2('File name'),$file;
+     print h2('File MIME type'),
+     uploadInfo($file)-&gt;{'Content-Type'};
+     while (&lt;$file&gt;) {
+        $length += length($_);
+     }
+     print h2('File length'),$length;
+ }
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H1><A NAME="Generating_Pages_from_Databases">Generating Pages from Databases
+
+</A></H1>
+By combining CGI with the DBI (database interface) module, you can generate
+pages on the fly from database records, and conversely, use HTML pages to
+update the database.
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Some_Background_Info_on_DBI">Some Background Info on DBI
+
+</A></H2>
+The DBI library, designed by Tim Bunce and others, is a generic Perl
+interface to relational database management systems (DBMSs) that speak SQL
+(Standard Query Language). The DBI library speaks to specific databases by
+way of DBD (Database Driver) modules. You can make queries on any database
+that has a DBD module available for it. These modules are sometimes
+provided by the database vendor, and sometimes by third parties. DBD
+modules for Oracle, Sybase, Illustra, mSQL, MySQL and others can be found
+at CPAN.
+
+
+<P>
+
+Full information on using DBI can be found in its manual pages and in
+<EM>Advanced Perl Programming</EM> by Sriram Srinivasan. Here's just enough background info to get you
+started.
+
+
+<P>
+
+Before you can work with the DBI interface, you must select and install a
+relational database. If you have access to a Unix system and do not already
+have such a database installed, a good one to start with is MySQL, a
+popular database management system that you can freely download from <EM>http://www.tcx.se/</EM>.
+
+
+<P>
+
+In relational databases, all information is organized in tables. Each row
+of the table is a data record, and each column is a field of the record.
+For example, here is one way to represent a catalog of kitchen products:
+
+
+<P>
+
+<PRE> +----------+-----------------------+---------------+------+-----+
+ | catalog  |          name         | description   | price|image|
+ +----------+-----------------------+---------------+------+-----+
+ |64-135517 |Handcrafted Salad Bowls|Each of our... | 39.00|  -  |
+ |64-1201565|Warning Blender        |With its two...|199.00|  -  |
+ |64-2743953|French Pepper Mills    |Made by a sm...| 32.00|  -  |
+ +----------+-----------------------+---------------+------+-----+
+</PRE>
+
+<P>
+
+<EM>catalog</EM> gives the catalog number for the item and is the <STRONG>primary
+key</STRONG> for the table.  <EM>name</EM> gives a brief descriptive name for the item, <EM>description</EM> a long text description (truncated in the table above), and <EM>price</EM> the item's price.  <EM>image</EM> holds the binary data from a JPG picture of the catalog item, and isn't
+shown in the table for obvious reasons.
+
+
+<P>
+
+In SQL databases each table column has a defined data type and a maximum
+field length. Available data types include integers, floating point
+numbers, character strings, date/time types, and sometimes more esoteric
+types. Unfortunately the data types supported by database management
+systems vary considerably, limiting the portability of applications among
+different vendors' products. We use MySQL data types and functions in these
+examples. You may have to make some modifications in order to support
+another database system.
+
+
+<P>
+
+The most basic way to communicate with a SQL database is via a text
+monitor, a small terminal-like application in which you type SQL queries to
+the database and view the results. To create the definition for the table
+shown above, you could issue the SQL CREATE command:
+
+
+<P>
+
+<PRE> mysql&gt; CREATE TABLE ProductList 
+        (
+          catalog      char(10)     primary key,
+          name         char(50)     not null,
+          price        numeric(8,2) not null,
+          description  text         not null,
+          image        mediumblob
+       );
+</PRE>
+
+<P>
+
+This declares a table named ``ProductList'' using the MySQL syntax. The
+<EM>catalog</EM> column is declared to be a string of at most ten characters, and it is also
+declared to be the primary key for the table. This ensures that a given
+catalog number is unique, and speeds up table lookups considerably.
+Appropriate data types are assigned to
+<EM>name</EM>, <EM>price</EM>, and <EM>description</EM>, and the directive ``not null'' is applied as well. The <EM>image</EM> column is a ``mediumblob'', meaning ``binary large object, of medium size''
+(less than 1.6 MB).
+
+
+<P>
+
+We can load some sample data into the database using a SQL INSERT
+statement:
+
+
+<P>
+
+<PRE> mysql&gt; INSERT INTO ProductList (catalog,name,price,description) 
+           VALUES ('64-10000','Smelling Salts',18.00,'Ach-choo!');
+</PRE>
+
+<P>
+
+We can now perform some queries over the database using the SQL SELECT
+statement.
+
+
+<P>
+
+To see the catalog and name fields:
+
+
+<P>
+
+<PRE> mysql&gt; SELECT catalog,name FROM ProductList;
+ +------------+--------------------------------------------+
+ | catalog    | name                                       |
+ +------------+--------------------------------------------+
+ | 64-2059954 | Chef's Choice Professional Knife Sharpener |
+ | 64-137877  | Fini Aceto Balsamico                       |
+ | 64-1201565 | Waring Commercial Blender                  |
+ | 64-135517  | Handcrafted Salad Bowls                    |
+ | 64-2743953 | French Salt &amp; Pepper Mills                 |
+ | 64-10000   | Smelling Salts                             |
+ +------------+--------------------------------------------+
+ 6 rows in set (0.00 sec)
+</PRE>
+
+<P>
+
+The part of the query following the SELECT command chooses which columns to
+display. The FROM keyword names the table to select the data from.
+
+
+<P>
+
+If we wished to look at all the columns, we could just specify ``*'' for
+the column list.
+
+
+<P>
+
+An optional WHERE clause allows you to filter the records so that only
+records matching a set of criteria are displayed. For example, this query
+shows only items that cost more than $50.00:
+
+
+<P>
+
+<PRE> mysql&gt; SELECT catalog,name,price FROM ProductList WHERE price&gt;50.00; 
+ +------------+--------------------------------------------+--------+
+ | catalog    | name                                       | price  |
+ +------------+--------------------------------------------+--------+
+ | 64-2059954 | Chef's Choice Professional Knife Sharpener | 129.00 |
+ | 64-1201565 | Waring Commercial Blender                  | 199.00 |
+ +------------+--------------------------------------------+--------+
+ 2 rows in set (0.05 sec)
+</PRE>
+
+<P>
+
+The INSERT statement can only be used to create a new record (or row) of
+the table. If you were to try to execute the insertion statement shown
+above a second time, the attempt would fail because any given catalog
+number can only occur once in the table. This feature guarantees the
+uniqueness of catalog numbers. To change the values in an existing record,
+you could use an UPDATE statement instead. For example, here's now to apply
+a 20% discount to the price of smelling salts:
+
+
+<P>
+
+<PRE> mysql&gt; UPDATE ProductList SET price=price-(price*0.20)
+         WHERE catalog='64-10000';
+ Query OK, 1 row affected (0.01 sec)
+</PRE>
+
+<P>
+
+Like the SELECT statement, UPDATE can have a WHERE clause which limits what
+records it affects. For each selected record, columns are updated according
+to one or more <EM>column</EM>=<EM>newvalue</EM> pairs specified in the SET clause. oA SELECT statement shows that the
+update worked.
+
+
+<P>
+
+<PRE> mysql&gt; SELECT catalog,name,price FROM ProductList
+        WHERE catalog='64-10000';
+ +----------+----------------+-------+
+ | catalog  | name           | price |
+ +----------+----------------+-------+
+ | 64-10000 | Smelling Salts | 14.40 |
+ +----------+----------------+-------+
+ 1 row in set (0.00 sec)
+</PRE>
+
+<P>
+
+The DELETE statement can be used to delete all records that satisfy the
+criteria set out in the WHERE clause. This query the Smelling Salts entry:
+
+
+<P>
+
+<PRE> mysql&gt; DELETE FROM ProductList WHERE name='Smelling Salts';
+ Query OK, 1 row affected (0.01 sec)
+</PRE>
+
+<P>
+
+If you forget to include a WHERE clause in UPDATE and DELETE statements,
+every record in the table will be updated or removed. This is generally to
+be avoided.
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Using_DBI">Using DBI
+
+</A></H2>
+The DBI interface provides methods for opening SQL databases, sending
+queries to the opened database, and reading the answers returned by those
+queries.
+
+
+<P>
+
+To open a database, you call <EM>DBI-&gt;connect()</EM> with the ``data source name'', a string that tells the database driver
+where the database is located. If the database requires a username and
+password for access, you can pass that information in the <EM>connect()</EM> call as well. The format of the data source name is DBMS-specific. For a
+MySQL database, it looks like this:
+
+
+<P>
+
+<PRE> &quot;dbi:mysql:$database:$hostname:$port&quot;
+</PRE>
+
+<P>
+
+All MySQL data sources begin with ``dbi:mysql''. They are followed by the
+name of the database, and, optionally, by the name and port of the remote
+host on which the DBMS is running. If the hostname and port are omitted,
+the driver defaults to using a standard port on the local host. To connect
+to a database named ``perl_conference'' on the local host using the
+username ``chef'' and the password ``grok'', you'd make this call:
+
+
+<P>
+
+<PRE> $dbh = DBI-&gt;connect('dbi:mysql:www', 'chef', 'grok');
+</PRE>
+
+<P>
+
+If successful, <EM>connect()</EM> returns a database handle, <CODE>$dbh</CODE>, which is used for subsequent communication with the database. The
+<EM>connect()</EM> method also accepts an optional fourth argument which consists of a hash
+reference of parameter name/value pairs. These control a variety of
+database options, such as whether to automatically commit all changes made
+to the database. The only option that we'll use in the examples to follow
+is <EM>PrintError</EM>, which when set to false, suppresses the printing of unwanted database
+warnings to the server error log.
+
+
+<P>
+
+The database handle has several methods, the most important of which are <EM>do()</EM>, <EM>prepare()</EM> and <EM>errstr()</EM>.  <EM>do()</EM> is used to execute SQL statements which do not return a list of records,
+such as INSERT, DELETE, UPDATE or CREATE. If the operation is successful, <EM>do()</EM>
+returns a count of the number of rows modified. For example, the following
+query applies a 20% discount to all records in ProductList and returns the
+number of rows affected.
+
+
+<P>
+
+<PRE> $count = $dbh-&gt;do('UPDATE ProductList SET SET price=price-(price*0.20)');
+ die $dbh-&gt;errstr unless defined $count;
+</PRE>
+
+<P>
+
+If the database encountered an error while processing the statement (for
+example, the SQL contained a syntax error), it will return undef. The <EM>errstr()</EM> method can be used to retrieve an informative error message from the
+driver.
+
+
+<P>
+
+SELECT queries can return a potentially large number of records, often more
+than will fit into memory at once. For this reason, the results from SELECT
+queries are returned in the form of statement handle objects. You then call
+the statement handle's <EM>fetchrow_array()</EM>
+method repeatedly to retrieve each row of the result.
+
+
+<P>
+
+Here's an example of retrieving the <EM>catalog</EM> and <EM>name</EM> fields from each session in the ProductList table:
+
+
+<P>
+
+<PRE> $sth = $dbh-&gt;prepare('SELECT catalog,name FROM ProductList') 
+        || die $dbh-&gt;errstr;
+ $sth-&gt;execute() || die $sth-&gt;errstr;
+ while (my ($catalog,$name) = $sth-&gt;fetchrow_array) {
+    print &quot;catno =&gt; $catalog, name =&gt; $name\n&quot;;
+ }
+ $sth-&gt;finish;
+</PRE>
+
+<P>
+
+The example starts with a call to the database handle's <EM>prepare()</EM>
+method with the text of the SQL SELECT statement.  <EM>prepare()</EM> parses the SQL and checks it for syntactic correctness, but does not
+actually execute it. The query is returned as a statement handler which we
+store into the variable <CODE>$sth</CODE>. If some error occurred while preparing the statement, <EM>prepare()</EM> returns undef, in which case we return the
+<EM>errstr()</EM> error text.
+
+
+<P>
+
+Next we call the statement handler's <EM>execute()</EM> method. This performs the query and returns the number of rows retrieved or
+undef if an error occurred. In the case of a syntactically correct query
+that happens to return no rows (because the table is empty or no records
+satisfied the criteria in the WHERE clause), <EM>execute()</EM>
+returns the the value ``0E0'' which Perl regards as true in a logical
+context, but as zero in a numeric one.
+
+
+<P>
+
+Now we enter a loop in which we call the statement handler's
+<EM>fetchrow_array()</EM> method. Each time it's called the methods returns the requested columns in
+the form of an array in the same order as the columns named in the SELECT
+clause. When there are no more rows left,
+<EM>fetchrow_array()</EM> returns an empty list.
+
+
+<P>
+
+DBI actually offers a family of fetch functions.  <EM>fetch()</EM> is like
+<EM>fetchrow_array()</EM>, but it returns an array <STRONG>reference</STRONG>, making it more memory efficient and somewhat faster. Another function,
+<EM>fetchrow_hashref()</EM> turns the current row into a hash of the column names and their values, and
+returns the hash's reference to the caller. This allows us to make the
+example above more readable at the cost of making it somewhat less
+efficient:
+
+
+<P>
+
+<PRE> $sth = $dbh-&gt;prepare('SELECT catalog,name FROM ProductList') 
+        || die $dbh-&gt;errstr;
+ $sth-&gt;execute() || die $sth-&gt;errstr;
+ while (my $r = $sth-&gt;fetchrow_hashref) {
+    print &quot;catno =&gt; $r-&gt;{catalog}, name =&gt; $r-&gt;{name}\n&quot;;
+ }
+ $sth-&gt;finish;
+</PRE>
+
+<P>
+
+When you are finished with a statement handler you should call its
+<EM>finish()</EM> method in order to free up the resources it uses.
+
+
+<P>
+
+The last thing you need to know about statement handlers is that many DBI
+drivers allow you to put placeholders, indicated by the ``?'' character,
+inside SQL statements.  <EM>prepare()</EM> compiles the statement and returns a statement handler as before, but when
+you later call
+<EM>execute()</EM> you pass in the values to be substituted into the placeolders. This allows
+you to treat statement handlers much as you would a subroutine by calling
+it repeatedly with different runtime arguments. For example, we can create
+a statement handler for returning the entire row of a catalog record with
+this bit of code:
+
+
+<P>
+
+<PRE>  $sth = $dbh-&gt;prepare('SELECT * FROM ProductList WHERE catalog=?');
+</PRE>
+
+<P>
+
+Now we can fetch information on item ``64-1201565'', by calling the
+statement handler's <EM>execute()</EM> method this way:
+
+
+<P>
+
+<PRE>  $sth-&gt;execute('64-1201565');
+</PRE>
+
+<P>
+
+The same statement handler can later be used to fetch information from
+other named sessions. You should still call <EM>finish()</EM> at the end of each series of fetches, even though you are going to reuse
+the statement handler. Failure to do so can lead to memory leaks.
+
+
+<P>
+
+When you are completely finished with a database handle, you should call
+its <EM>disconnect()</EM> method in order to sever the connection and clean up.
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Kitchen_Catalog_Shopping_Cart_De">Kitchen Catalog/Shopping Cart Demo
+
+</A></H2>
+We'll walk through this long example during the tutorial. It does the
+following things:
+
+
+<P>
+
+<OL>
+<LI><STRONG><A NAME="item_Displays_a_brief_listing_of_all_"> Displays a brief listing of all items in the catalog
+database.
+
+</A></STRONG>
+<LI><STRONG><A NAME="item_Allows_users_to_select_an_item_t"> Allows users to select an item to get more information about
+it.
+
+</A></STRONG>
+<LI><STRONG><A NAME="item_Displays_a_picture_of_the_item_"> Displays a picture of the item, its catalog description,
+and price.  Also indicates whether it is in stock or out of stock.
+
+</A></STRONG>
+<LI><STRONG><A NAME="item_Maintains_a_shopping_cart_that_t"> Maintains a shopping cart that the user can add to and edit.
+
+</A></STRONG>
+<LI><STRONG><A NAME="item_When_user_presses_Place_Order_"> When user presses "Place Order" button, user's shopping cart
+is tallied up and user is prompted for shipping and payment
+information.
+
+</A></STRONG>
+<LI><STRONG><A NAME="item_Processes_user_s_information_and"> Processes user's information and enters it into a order list
+queue in the database.
+
+</A></STRONG>
+</OL>
+<P>
+<HR>
+<H3><A NAME="Tables_Used_by_the_Application">Tables Used by the Application
+
+</A></H3>
+We use the following table definitions:
+
+
+<P>
+
+<PRE> # Contents of the catalog
+ CREATE TABLE ProductList  (
+     catalog      char(10)     primary key,
+     name         char(50)     not null,
+     price        numeric(8,2) not null,
+     description  text         not null,
+     image        mediumblob );
+</PRE>
+
+<P>
+
+<PRE> # How many of each item in stock?
+ CREATE TABLE StockList (
+     catalog   char(10) primary key,
+     quantity  int default 0 not null  );
+</PRE>
+
+<P>
+
+<PRE> # List of session numbers for shopping cart.  Each user
+ # has his own unique session number.
+ CREATE TABLE Session (
+        session_id      int default 0 auto_increment primary key,
+        created         timestamp );
+</PRE>
+
+<P>
+
+<PRE> # List of items in the shopping cart for a given session ID.
+ CREATE TABLE ShoppingCart (
+        session_id    int not null,
+        catalog       char(10) not null,
+        count         int default 0,
+        key(session_id),key(catalog) 
+ );
+</PRE>
+
+<P>
+
+<PRE> # shipping/billing information for the user
+ CREATE TABLE CustInfo (
+        order_id        int auto_increment primary key,
+        created         timestamp,
+        name            char(50) not null,
+        address1        char(50) not null,
+        address2        char(50),
+        city            char(15) not null,
+        state           char(2)  not null,
+        country         char(15) not null,
+        zip             char(9)  not null,
+        telephone       char(20) not null,
+        ccno            char(20) not null,
+        expires         char(10) not null );
+</PRE>
+
+<P>
+
+<PRE> # for a given order number, listing of the items ordered
+ CREATE TABLE OrderInfo (
+        order_id        int not null,
+        catalog         char(10) not null,
+        quantity        int not null,
+        key(order_id),key(catalog) 
+ );
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="The_Catalog_pm_module">The Catalog.pm module
+
+</A></H3>
+This is a utility module that does all the database access. Encapsulating
+database specifics in a module keeps the CGI scripts simpler and makes it
+easier to change databases later.
+
+
+<P>
+
+The module works by creating a <EM>Catalog</EM> object, which knows how to list the items in the catalog and return
+information on a given item.
+
+
+<P>
+
+<PRE> package Catalog;
+ # modules/Catalog.pm
+ # Fetch items from the catalog and display them.
+ 
+ use strict;
+ use Carp;
+ use DBI;
+ use CGI qw(:standard);
+ 
+ # create new catalog object
+ sub new {
+     my $class = shift;
+     my $db = shift || croak &quot;Please provide a DBI handle&quot;;
+     return bless {'db' =&gt; $db},$class;
+ }
+ 
+ # return database handle (used internally)
+ sub db { return $_[0]-&gt;{'db'}; }
+ 
+ # Return list of catalog numbers.  In an array context, returns
+ # list of catalog numbers only.  In scalar context, returns a hash
+ # ref in which the keys are catalog numbers, and values are the
+ # brief descriptions ('names') of the items.
+ sub list {
+     my $self = shift;
+     my $db = $self-&gt;db || croak ('No database handle');
+     my $sth = $db-&gt;prepare('SELECT catalog,name FROM ProductList') 
+        || croak(&quot;Prepare:&quot;,$db-&gt;errstr);
+     $sth-&gt;execute || return;
+     my %items;
+     while (my($catalog,$name) = $sth-&gt;fetchrow_array) {
+        $items{$catalog} = $name;
+     }
+     return keys %items if wantarray;
+     return \%items;
+ }
+ 
+ # Get the information for an entry in the catalog.
+ # If successful, returns a hashref in which the keys are the column names.
+ # Returns the length of the image in a key named 'image'.  This can be used
+ # to determine if there is an image to display.
+ # The key &quot;in_stock&quot; returns the number of items currently in stock.
+ sub info {
+     my $self = shift;
+     my $catno = shift  || croak (&quot;Provide a catalog number&quot;);
+     my $db = $self-&gt;db || croak ('No database handle');
+     my $sth = $db-&gt;prepare(&lt;&lt;END);
+ SELECT name,ProductList.catalog,price,description,length(image) as image,quantity as in_stock
+     FROM ProductList,StockList 
+        WHERE ProductList.catalog=? 
+            AND ProductList.catalog=StockList.catalog
+ END
+     $sth-&gt;execute($catno);
+     my $info = $sth-&gt;fetchrow_hashref;
+     $sth-&gt;finish;
+     return $info;
+ }
+ 
+ # Return the image data for an entry in the catalog.
+ sub image {
+     my $self = shift;
+     my $catno = shift  || croak (&quot;Provide a catalog number&quot;);
+     my $db = $self-&gt;db || croak ('No database handle');
+     my $sth = $db-&gt;prepare('SELECT image FROM ProductList WHERE catalog=?');
+     $sth-&gt;execute($catno) || return;
+     my ($image) = $sth-&gt;fetchrow_array;
+     $sth-&gt;finish;
+     return $image;
+ }
+ 
+ 1;
+ __END__
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="The_Session_pm_module">The Session.pm module
+
+</A></H3>
+The scripts need to maintain a stable session in order to keep users'
+shopping carts distinct. The <EM>Session.pm</EM> module does this by allocating a unique session ID, and arranging for this
+ID to be appended to the end of the script's URL in the additional path
+information section.  
+
+
+<P>
+
+After allocating a session ID, <EM>Session.pm</EM> returns a <EM>Session</EM>
+object to the caller. This object is used to fetch all session-specific
+data (in this case, the contents of the shopping cart).
+
+
+<P>
+
+The technique of storing state information in the URL is called <EM>URL
+rewriting</EM>. In order for the technique to work across CGI scripts, all URLs generated
+by the CGI scripts must be passed through the
+<EM>Session</EM> object's <EM>rewrite_url()</EM> method, so that the object can tack on the appropriate session ID.
+
+
+<P>
+
+The <EM>Session.pm</EM> module is actually an abstract superclass. A bunch of important methods,
+such as communicating with the database and fetching state information, are
+left to subclasses to implement.
+
+
+<P>
+
+<PRE> package Session;
+ # modules/Session.pm
+ # This utility module is an interface to a Session object based on URL rewriting.
+ # The session ID is stored in the &quot;additional path info&quot; of the URL.  All URLs must
+ # be passed through rewrite_url() in order to maintain the state.
+ 
+ # manage database sessions with URL rewriting
+ use strict;
+ use CGI 'path_info','url';
+ use Carp;
+ 
+ # return a new session object, possibly retrieving
+ # id from the additional path info.  May do a redirection
+ # if a new ID needs to be created.  Therefore this method
+ # should be called before header() or other output. If it
+ # returns undef, you should immediately exit, not die.
+ sub new {
+     my $class = shift;
+     my $self = bless {},$class;
+     $self-&gt;initialize(@_);  # class-specific initialization
+     my $id = $self-&gt;retrieve_id;
+     unless ($id &amp;&amp; $self-&gt;verify_id($id)) {
+        $id = $self-&gt;new_id;
+        $self-&gt;do_redirect($id);
+        return;
+     }
+     $self-&gt;{'id'} = $id;
+     return $self;
+ }
+ 
+ # erase the ID from the underlying storage
+ sub erase {
+     my $self = shift;
+     return $self-&gt;erase_id;
+ }
+ 
+ # return the ID
+ sub id { return $_[0]-&gt;{'id'}; }
+ 
+ # fetch data from the store as a hash reference
+ sub fetch {
+     my $self = shift;
+     return $self-&gt;fetch_data();
+ }
+ 
+ # place a hash reference into storage
+ sub store {
+     my $self = shift;
+     my $data = shift;
+     return $self-&gt;store_data($data);
+ }
+ 
+ # retrieve ID from path info
+ sub retrieve_id {
+     my $self = shift;
+     my ($id) = path_info() =~ m!^/(\d+)!;
+     return $id;
+ }
+ 
+ # Please pass all self-referencing URLs through this method
+ # in order to preserve the session ID.
+ sub rewrite_url {
+     my ($self,$url) = @_;
+     my $id = $self-&gt;id;  # retrieve ID
+     return $url unless defined $id;
+     my ($main,$query) = split('\?',$url);
+     $main = &quot;../$main&quot; if $main !~ m[^(http:|/)] &amp;&amp; path_info();
+     return &quot;$main/$id?$query&quot; if     $query;
+     return &quot;$main/$id&quot;        unless $query;
+ }
+ 
+ # do_redirect() is called when a new session ID needs to be generated
+ sub do_redirect {
+     my ($self,$id) = @_;
+     $self-&gt;{'id'} = $id;
+     my $url = $self-&gt;rewrite_url(url(-full=&gt;1,-query=&gt;1)); # CGI::url()
+     print CGI::redirect($url);   # CGI::redirect()
+ }
+ 
+ # Class-specific initialization.  Probably want to override.
+ sub initialize { return bless {},shift; }
+ 
+ # the remainder is to be implemented by subclasses
+ sub new_id     { croak &quot;new_id() must be implemented by subclass&quot;;     }
+ sub verify_id  { croak &quot;verify_id() must be implemented by subclass&quot;;  }
+ sub erase_id   { croak &quot;erase_id() must be implemented by subclass&quot;;   }
+ sub fetch_data { croak &quot;fetch_data() must be implemented by subclass&quot;; }
+ sub store_data { croak &quot;store_data() must be implemented by subclass&quot;; }
+ 
+ 1;
+ __END__
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="The_ShoppingCart_pm_module">The ShoppingCart.pm module
+
+</A></H3>
+<EM>ShoppingCart.pm</EM> is a subclass of <EM>Session</EM>. It implements methods to fetch the current shopping cart contents and
+store changes back into the database. The shopping cart is implemented
+simply as a hash reference in which the keys are the catalog numbers and
+the values are the number of items of that type in the cart.
+
+
+<P>
+
+<EM>ShoppingCart</EM> also implements methods for querying the stock list, to find out how many
+items are currently in stock (and not obligated to other user's shopping
+carts), and placing an order.
+
+
+<P>
+
+<PRE> package ShoppingCart;
+ # modules/ShoppingCart.pm
+ # This subclass of Session.pm handles the business logic side of the
+ # shopping cart application.
+ 
+ use strict;
+ use Session;
+ use Carp;
+ use DBI;
+ use CGI qw(p li ol strong cite);
+ use vars '@ISA';
+ 
+ @ISA = 'Session';
+ 
+ # called at initialization time to process any command-line arguments
+ sub initialize { 
+     my $self = shift;
+     my $db = shift || croak &quot;Need a database handle&quot;;
+     $self-&gt;{'db'} = $db;
+ }
+ 
+ # This gets called to create a new (blank) shopping cart session.
+ # It inserts a new record into the Session table, and returns the
+ # newly-created session_id
+ sub new_id { 
+     my $self = shift;
+     return unless my $db = $self-&gt;{'db'};
+     return unless $db-&gt;do('INSERT INTO Session VALUES (NULL,NULL)');
+     return $db-&gt;func('_InsertID');
+ }
+ 
+ # verify_id() does a select on the Session table to verify that the
+ # given ID is in the table.  
+ sub verify_id {
+     my ($self,$id) = @_;
+     return unless $id;
+     return unless my $db = $self-&gt;{'db'};
+     return $db-&gt;do(&quot;SELECT 1 FROM Session WHERE session_id=$id&quot;) &gt; 0;
+ }
+ 
+ # verify_catalog() does a select on the ProductList table to confirm
+ # that a catalog number is valid
+ sub verify_catalog {
+     my ($self,$catalog) = @_;
+     return unless my $db = $self-&gt;{'db'};
+     return $db-&gt;do(&quot;SELECT 1 FROM ProductList WHERE catalog='$catalog'&quot;) &gt; 0;
+ }
+ 
+ # erase_id() removes the id from the Session table and the ShoppingCart
+ # returns the number of rows affected by deletion -- only for interest's sake
+ sub erase_id   { 
+     my $self = shift;
+     return unless my $db = $self-&gt;{'db'};
+     return unless my $id = $self-&gt;id;
+     my $rows = $db-&gt;do(&quot;DELETE FROM Session WHERE session_id=$id&quot;);
+     $rows   += $db-&gt;do(&quot;DELETE FROM ShoppingCart WHERE session_id=$id&quot;);
+     return $rows;
+ }
+ 
+ # return the contents of the shopping cart as a hash
+ sub fetch_data { 
+     my $self = shift;
+     return unless my $db = $self-&gt;{'db'};
+     return unless my $id = $self-&gt;id;
+     my $sth = $db-&gt;prepare(&lt;&lt;END) || croak $db-&gt;errstr;
+ SELECT catalog,count FROM ShoppingCart
+     WHERE session_id=$id
+ END
+     $sth-&gt;execute || croak $db-&gt;errstr;
+     my %cart;
+     while (my ($catalog,$count) = $sth-&gt;fetchrow_array) {
+        $cart{$catalog} = $count;
+     }
+     return \%cart;
+ }
+ 
+ # store/update the contents of the shopping cart from a hash
+ sub store_data {
+     my $self = shift;
+     my $data = shift;
+     return unless my $db = $self-&gt;{'db'};
+     return unless my $id = $self-&gt;id;
+     $db-&gt;do('LOCK TABLES ShoppingCart WRITE, ProductList READ');
+ 
+     # The select is needed to determine whether to do an
+     # update or an insert
+     my $select = $db-&gt;prepare(&lt;&lt;END) || croak $db-&gt;errstr;
+ SELECT 1 FROM ShoppingCart WHERE catalog=? AND session_id=?
+ END
+ 
+     # the update statement assumes that the catalog item
+     # is already in the shopping cart, and the user is changing
+     # the quantity.
+     my $update = $db-&gt;prepare(&lt;&lt;END) || croak $db-&gt;errstr;
+ UPDATE ShoppingCart SET count=?
+        WHERE catalog=? AND session_id=?
+ END
+ 
+     # the insert statement assumes that a new item is being
+     # added to the shopping cart
+     my $insert = $db-&gt;prepare(&lt;&lt;END) || croak $db-&gt;errstr;
+ INSERT INTO ShoppingCart (count,catalog,session_id) VALUES (?,?,?)
+ END
+ 
+     for my $catalog (keys %$data) {
+        next unless $self-&gt;verify_catalog($catalog);
+        my $count = $data-&gt;{$catalog};
+        if ($select-&gt;execute($catalog,$id) &gt; 0) {
+            $update-&gt;execute($count,$catalog,$id) || croak $db-&gt;errstr;
+        } else {
+            $insert-&gt;execute($count,$catalog,$id) || croak $db-&gt;errstr;
+        }
+     }
+     $update-&gt;finish;
+     $insert-&gt;finish;
+     $select-&gt;finish;
+     $db-&gt;do(&quot;DELETE FROM ShoppingCart WHERE session_id=$id AND count&lt;=0&quot;);
+     return 1;
+ }
+ 
+ # return the number of unobligated items in stock for the given catalog numer.
+ # sum of the stocklist + all active shopping carts.
+ sub items_left {
+     my $self = shift;
+     my $catalog = shift;
+     return unless my $db = $self-&gt;{'db'};
+     my $sth = $db-&gt;prepare(&lt;&lt;END) || $db-&gt;errstr;
+ SELECT quantity-sum(count)
+     FROM StockList,ShoppingCart
+        WHERE StockList.catalog='$catalog'
+              AND StockList.catalog=ShoppingCart.catalog
+ END
+     $sth-&gt;execute || return;
+     my ($count) = $sth-&gt;fetchrow_array;
+     $sth-&gt;finish;
+     return $count;
+ }
+ 
+ # Enter an order into the order entry system.  Also updates the
+ # stocklist and removes the session.  Argument ($data) must be a 
+ # hash ref containining customer shipping and billing information 
+ # (see code for details).
+ #
+ #  If successful, returns the confirmation number.  Otherwise
+ # returns an HTMLized description of the error.
+ sub place_order {
+     my $self = shift;
+     my $data = shift;
+ 
+     # default error message
+     $@ = p(strong({-class=&gt;'alert'},'Software error'));
+ 
+     return unless my $db = $self-&gt;{'db'};
+     return unless my $id = $self-&gt;id;
+     return unless ref($data) eq 'HASH';
+     
+     my @missing;
+     foreach (qw(name address1 city state country zip telephone ccno expires)) {
+        push(@missing,cite($_)) unless $data-&gt;{$_};
+     }
+     if (@missing) {
+        $@ = p(strong({-class=&gt;'alert'},
+                      'The following field(s) must be filled out',
+                      'to place your order:')) .
+                ol(li(\@missing));
+        return;
+     }
+     
+     # enter shipping/billing information into the database.
+     my $custinfo = $db-&gt;prepare(&lt;&lt;END) || die 'process_order: ',$db-&gt;errstr;
+ INSERT INTO CustInfo (order_id,name,address1,address2,city,state,
+                       country,zip,telephone,ccno,expires)
+     VALUES(?,?,?,?,?,?,?,?,?,?,?)
+ END
+     my @vars = (undef,@{$data}{qw(name address1 address2 city state
+                                  country zip telephone ccno expires)});
+     unless ($custinfo-&gt;execute(@vars)) {
+        $@ = p(strong({-class=&gt;'alert'},
+                      'Unable to enter customer information into database.',
+                      'Please contact customer service.'));
+        return;
+     }
+     my $orderid = $db-&gt;func(&quot;_InsertID&quot;);
+     $custinfo-&gt;finish;
+ 
+     #enter the order itself into the database
+     my $result = $db-&gt;do(&lt;&lt;END);
+ INSERT INTO OrderInfo (order_id,catalog,quantity)
+     SELECT $orderid,catalog,count
+        FROM ShoppingCart
+            WHERE session_id=$id
+ END
+     unless ($result &gt; 0) {
+        $@ = p(strong({-class=&gt;'alert'},
+                      'Unable to enter your order into the database.',
+                      'Please contact customer service.'));
+        return;
+     }
+ 
+     # Decrement stocklist to reflect the order.
+     # In the real world, this shouldn't be done until the item is
+     # shipped, but who cares about reality?
+     my $update_stock = $db-&gt;prepare(&lt;&lt;END) || return;
+ UPDATE StockList SET quantity=quantity-? WHERE catalog=?
+ END
+     my $items = $self-&gt;fetch_data;
+     for my $catalog (keys %$items) {
+        $update_stock-&gt;execute($items-&gt;{$catalog},$catalog) || return;
+     }
+     $update_stock-&gt;finish;
+ 
+     # delete the shopping cart -- it's now empty
+     $db-&gt;do(&quot;DELETE FROM ShoppingCart WHERE session_id=$id&quot;);
+ 
+     return $orderid;
+ }
+ 1;
+ __END__
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="The_catalog_cgi_Script">The catalog.cgi Script
+
+</A></H3>
+This is the CGI script responsible for printing the catalog's table of
+contents, as well as individual catalog pages.
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ # catalog.cgi
+ # An online catalog/shopping cart demo.  Uses DBI and CGI.pm.
+ 
+ use lib 'modules';
+ 
+ use DBI;
+ use CGI::Pretty qw/:standard/;
+ use Catalog;
+ use ShoppingCart;
+ use strict;
+ 
+ use constant DB           =&gt; 'dbi:mysql:perl_conference';
+ use constant stylesheet   =&gt; '/stylesheets/catalog.css';
+ 
+ # open database
+ my $db = DBI-&gt;connect(DB,undef,undef,{PrintError=&gt;0}) || die $DBI::errstr;
+ 
+ # CGI parameters:
+ # -none-             display catalog table o' contents (in no particular order)
+ # &quot;catno&quot;            display catalog entry for indicated item
+ # &quot;catno&quot; &quot;add&quot;      add catalog item to shopping cart
+ # &quot;catno&quot; &quot;delete&quot;   delete catalog item from shopping cart
+ 
+ # Basic variables.  Note that if we can't get a shopping cart object, we just exit.
+ # This is because the shopping cart generates an HTTP redirection automatically.
+ my $cart    = ShoppingCart-&gt;new($db) || exit 0;
+ my $catalog = Catalog-&gt;new($db)      || die &quot;Couldn't create catalog&quot;;
+ my $catno   = param('catno') unless param('browse');
+ my $title   = $catno ? &quot;Catalog \#$catno&quot; : 'Kool Kitchen Koncepts';
+     
+ # process adds/deletes on the shopping cart
+ process_shopping_cart($catno,$cart) if $catno;
+ 
+ # begin the page
+ print header(),  # start HTTP
+       start_html(-Style =&gt; {src =&gt; stylesheet},
+                 -Title =&gt; $title);
+ 
+ # display the requested item
+ if ($catno) {
+     display_item($catalog,$cart,$catno);
+ } else { # no item requested, so display table o' contents
+     display_list($catalog,$cart);
+ }
+ 
+ # display the shopping cart, if there is one
+ display_shopping_cart($catalog,$cart);
+ 
+ bottom_boilerplate();
+ print end_html;
+ $db-&gt;disconnect;
+ exit 0;
+ 
+ # Display a list of items in the catalog
+ sub display_list {
+     my ($catalog,$cart) = @_;
+ 
+     print h1('Our Katalog of Fine Kitchen Kitsch');
+     my $items = $catalog-&gt;list;
+     
+     my ($count,@rows);
+     for my $catno (sort {$items-&gt;{$a} cmp $items-&gt;{$b}} keys %$items) {
+        my $class = $count++ % 2 ? '' : 'highlight'; # alternate highlight rows
+        my $url = $cart-&gt;rewrite_url(url() . &quot;?catno=$catno&quot;);
+ 
+        push(@rows,
+             td ({-class=&gt;$class},
+                 [$items-&gt;{$catno},a({-href=&gt;$url},$catno)])
+             );
+     }
+ 
+     print table({-width=&gt;'100%'},
+                 TR(th['Description','Catalog']),TR \@rows);
+ }
+ 
+ # display a selected catalog item
+ sub display_item { 
+     my ($catalog,$cart,$catno) = @_;
+     my $info = $catalog-&gt;info($catno) || not_found_error($catno);
+     my $url = url(-path_info=&gt;1);
+ 
+     print h1($info-&gt;{'name'});
+     print img({-alt=&gt;&quot;[$catno]&quot;,
+               -src=&gt;$cart-&gt;rewrite_url(&quot;display.cgi?catno=$catno&quot;),-align=&gt;'LEFT'})
+        if $info-&gt;{'image'};
+ 
+     print p($info-&gt;{'description'}),
+          p(strong('Price:'),&quot;\$$info-&gt;{price}&quot;,
+          ($info-&gt;{'in_stock'} &gt; 0 ? em('(In stock)')
+                                   : strong({-class=&gt;'alert'},'Out of stock')));
+ 
+     # handle the shopping cart stuff
+     my $cart_data = $cart-&gt;fetch;
+     print start_form(-action=&gt;url(-path_info=&gt;1)),
+           hidden(-name=&gt;'catno'),
+           submit(-name=&gt;'browse',-value=&gt;'Browse Catalog');
+     print submit(-name=&gt;'delete',-value=&gt;'Delete from Shopping Cart')
+        if $cart_data-&gt;{$catno} &gt; 0;
+     print submit(-name=&gt;'add',   -value=&gt;'Add to Shopping Cart'),
+           end_form;
+ }
+ 
+ # display the current shopping cart
+ sub display_shopping_cart {
+     my ($catalog,$cart) = @_;
+     my $url = url(-relative=&gt;1);
+     my $items = $cart-&gt;fetch;
+     my @rows;
+     for my $catno (keys %$items) {
+        my $name = $catalog-&gt;info($catno)-&gt;{'name'};
+        my $left = $cart-&gt;items_left($catno);
+        my $backordered = $left &gt;= 0 ? cite('in stock') : strong({-class=&gt;'alert'},abs($left));
+        push(@rows,td({-align=&gt;'LEFT'},
+                      [ a({-href=&gt;$cart-&gt;rewrite_url(&quot;$url?catno=$catno&quot;)},$catno),
+                       $name,
+                       textfield(-name=&gt;$catno,-value=&gt;$items-&gt;{$catno},
+                                 -override=&gt;1,-size=&gt;4)]) .
+             td({-align=&gt;'CENTER'},$backordered));
+     }
+     return unless @rows;
+     print hr,
+           h2('Your Shopping Cart'),
+           start_form({-action=&gt;$cart-&gt;rewrite_url('order.cgi')}),
+           table({-border=&gt;undef},
+                TR(th ['Catalog','Description','Quantity','Backordered']),
+                TR \@rows),
+           submit('Place Order'),
+           end_form;
+ }
+ 
+ # Process the &quot;add&quot; and &quot;delete&quot; shopping cart buttons
+ sub process_shopping_cart {
+     my ($catno,$cart) = @_;
+     return unless param('add') || param('delete');
+     my $current = $cart-&gt;fetch;
+     $current-&gt;{$catno}++      if param('add');
+     $current-&gt;{$catno}=0      if param('delete');
+     $cart-&gt;store($current);
+ }
+ 
+ # Error message to display if the requested catalog number does not exist
+ # (?someone screwing around with our URL?).
+ sub not_found_error {
+     my $catno = shift;
+     print start_html(-style =&gt; {src =&gt; stylesheet},
+                     -title =&gt; 'Unknown Product'),
+           h1('Unknown Product'),
+           p(&quot;The product with catalog number $catno is not on our current&quot;,
+            &quot;stocklist.  Please call our customer service representatives&quot;);
+     bottom_boilerplate();
+     exit 0;
+ }
+ 
+ sub bottom_boilerplate {
+     print hr,'Copyright 1999 ',a({-href=&gt;'/'},'Kool Kitchen Concepts');
+ }
+ __END__
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="The_display_cgi_Script">The display.cgi Script
+
+</A></H3>
+This script is responsible for fetching and displaying the picture of the
+catalog item, if any.
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ # display.cgi
+ # Fetch picture of product from the database
+ 
+ use strict;
+ use DBI;
+ use lib 'modules';
+ use Catalog;
+ use CGI 'header','param';
+ use vars '$DB';
+ use constant DB           =&gt; 'dbi:mysql:perl_conference';
+ 
+ no_content() unless my $catno = param('catno');
+ 
+ # open database
+ $DB = DBI-&gt;connect(DB,undef,undef,{PrintError=&gt;0}) || die $DBI::errstr;
+ 
+ 
+ my $catalog = Catalog-&gt;new($DB) || die;
+ no_content() unless my $image = $catalog-&gt;image($catno);
+ 
+ print header(-type           =&gt; 'image/jpg',
+             -content_length =&gt; length($image));
+ print $image;
+ 
+ $DB-&gt;disconnect;
+ 
+ sub no_content {
+     print header(-status=&gt;204);
+     $DB-&gt;disconnect if defined $DB;
+     exit 0;
+ }
+ __END__
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="The_order_cgi_Script">The order.cgi Script
+
+</A></H3>
+This script is responsible for collecting the user's billing and shipping
+information, and calling the <EM>ShoppingCart</EM> object's
+<EM>place_order()</EM> method to enter the order into the OrderInfo and CustomerInfo tables.
+
+
+<P>
+
+The script also allows the user to make last minute changes to the list of
+items in the shopping cart, and recalculates the order amount.
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ # order.cgi
+ # online order-entry system for catalog demo
+ 
+ use lib './modules';
+ use strict;
+ use DBI;
+ use CGI::Pretty qw/:standard/;
+ use Catalog;
+ use ShoppingCart;
+ 
+ use constant DB           =&gt; 'dbi:mysql:perl_conference';
+ use constant SHIPPING     =&gt; '10.50';
+ use constant stylesheet   =&gt; '/stylesheets/catalog.css';
+ 
+ # open database
+ my $db = DBI-&gt;connect(DB,undef,undef,{PrintError=&gt;0}) || die $DBI::errstr;
+ my $cart    = ShoppingCart-&gt;new($db) || exit 0;
+ my $catalog = Catalog-&gt;new($db)      || die &quot;Couldn't create catalog&quot;;
+ 
+ # CGI parameters:
+ # $catalog           number of this item
+ # &quot;confirm&quot;          confirm order
+ # &quot;update&quot;           update quantities on order form
+ 
+ # items on the customer/order info form
+ my %labels = (
+              'name'      =&gt; 'Full Name (required)',
+              'address1'  =&gt; 'Address line 1 (required)',
+              'address2'  =&gt; 'Address line 2',
+              'city'      =&gt; 'City (required)',
+              'state'     =&gt; 'State/Province (required)',
+              'country'   =&gt; 'Country (required)',
+              'zip'       =&gt; 'Zip Code (required)',
+              'telephone' =&gt; 'Daytime Phone (required)',
+              'ccno'      =&gt; 'Credit Card MC/Visa/Amex (required)',
+              'expires'   =&gt; 'Expiration date (required)'
+              );
+ 
+ # process any last-minute changes to the shopping cart
+ process_cart($cart);
+ 
+ # If there's nothing to order, then return to catalog main page?
+ unless (keys %{$cart-&gt;fetch}) {
+     print redirect($cart-&gt;rewrite_url('catalog.cgi'));
+     exit 0;
+ }
+ 
+ # start the HTML document
+ print header();
+ print start_html(-style =&gt; {src =&gt; stylesheet},
+               -title =&gt; 'Kool Kitchen Koncepts Order Form'),
+       h1('Order from Kool Kitchen Koncepts'),
+       p(&quot;Our one-klick order form makes ordering kwick and easy!&quot;);
+ 
+ # If the &quot;confirm&quot; parameter is present, then try to place the order.
+ # The ShoppingCart will do all the hard stuff.
+ my $confirmation;
+ if (param('confirm')) {
+     my $order_data = CGI::Vars();  # magic CGI.pm function (recent addition)
+     $confirmation = $cart-&gt;place_order($order_data);
+     print $@ unless $confirmation; # couldn't confirm so give error message
+ }
+ 
+ # If there's a confirmation number, then we've placed the order successfully,
+ # so we print it.
+ if ($confirmation) {
+     print_confirmation($confirmation,$cart);
+ } 
+ # otherwise we display the shopping cart and customer/order info form.
+ else { 
+     print start_form;
+     display_shopping_cart($catalog,$cart);
+     display_order_form();
+     print end_form;
+ }
+ 
+ bottom_boilerplate($cart);
+ $db-&gt;disconnect;
+ exit 0;
+ 
+ # This is called to print the order confirmation number.
+ sub print_confirmation {
+     my ($confirmation_id,$cart) = @_;
+     print h2('Your order has been entered'),
+           h3(&quot;Confirmation \# $confirmation_id&quot;),
+           p('Please keep this number for your records.');
+ }
+ 
+ # This is called to display the shopping cart and current totals.
+ sub display_shopping_cart {
+     my ($catalog,$cart) = @_;
+     my $items = $cart-&gt;fetch;
+ 
+     my (@rows,$total);
+     for my $catno (keys %$items) {
+        my $info = $catalog-&gt;info($catno);
+        my $left = $cart-&gt;items_left($catno);
+        my $backordered = $left &gt;= 0 ? '' 
+                                      : strong({-class=&gt;'alert'},
+                                              abs($left) . ' item(s) backordered');
+        push(@rows,
+             td(
+                [a({-href=&gt;$cart-&gt;rewrite_url(&quot;catalog.cgi?catno=$catno&quot;)},$catno),
+                 $info-&gt;{'name'} ] ).
+             td({-align=&gt;'RIGHT'}, 
+                [ textfield(-name=&gt;$catno, -value=&gt;$items-&gt;{$catno}, -size=&gt;3),
+                  $info-&gt;{'price'},
+                  sprintf('%4.2f',$items-&gt;{$catno} * $info-&gt;{'price'}),
+                 $backordered ]
+                ));
+        $total += $items-&gt;{$catno} * $info-&gt;{'price'};
+     }
+     push(@rows,
+         td({-class=&gt;'highlight',-align=&gt;'RIGHT',-colspan=&gt;4},'Shipping/Handling') .
+         td({-class=&gt;'highlight',-align=&gt;'RIGHT'},&quot;\$&quot;,SHIPPING));
+     push(@rows,
+         th({-align=&gt;'RIGHT',-colspan=&gt;4},'Total') .
+         th({-align=&gt;'RIGHT'},&quot;\$&quot;,sprintf('%4.2f',SHIPPING + $total)));
+ 
+     print table({-width=&gt;'100%'},
+                TR(th(['Catalog','Name','Quantity', 'Price','Total Price','B.O.'])),
+                TR(\@rows)),
+           submit('Recalculate');
+ }
+ 
+ # This is called to display the customer/order information form.
+ sub display_order_form {
+     my @rows;
+     param(-name=&gt;'country',-value=&gt;'USA'); # default
+     for my $field (qw(name address1 address2 city 
+                      state country zip telephone ccno expires)) {
+        push(@rows,
+             th({-align=&gt;'RIGHT'},$labels{$field}) .
+             td(textfield(-name=&gt;$field,-size=&gt;40)));
+     }
+     print hr,
+           h3('Shipping/Payment Information'),
+           table(TR(\@rows)),
+           submit(-name=&gt;'confirm',-value=&gt;'Confirm Order'),
+           hr;
+ }
+ 
+ # This is called to update the contents of the shopping cart if any
+ # last-minute changes have been made.
+ sub process_cart {
+     my $cart = shift;
+     my $items = $cart-&gt;fetch;
+     my $changed;
+     foreach (keys %$items) {
+        next unless defined param($_);
+        $items-&gt;{$_} = param($_);
+        $changed++;
+     }
+     $cart-&gt;store($items) if $changed;
+ }
+ 
+ sub bottom_boilerplate {
+     my $cart = shift;
+     print p(a({-href=&gt;$cart-&gt;rewrite_url('catalog.cgi')},'Browse our katalog')),
+           hr,'Copyright 1999 ',a({-href=&gt;'/'},'Kool Kitchen Concepts');
+ }
+ __END__
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Utility_Scripts">Utility Scripts
+
+</A></H3>
+I had to write some scripts to get test data into the database. There's
+presented here without further explanation; you might find them useful
+(particularly <EM>load_catalog.pl</EM>, which does XML parsing.
+
+
+<P>
+
+<DL>
+<DT><STRONG><A NAME="item_load_catalog">load_catalog.pl
+
+</A></STRONG><DD>
+<PRE> #!/usr/local/bin/perl
+ # This program loads the DBI ProductList table from an XML file.
+ 
+ use ProductParser;
+ use DBI;
+ use <A HREF="File::Basename">File::Basename</A>;
+ use constant DB =&gt;'DBI:mysql:perl_conference';
+ 
+ my $DB = DBI-&gt;connect( DB,undef,undef,{PrintError=&gt;0} )
+     || die &quot;Connect failure: &quot;,$DBI::errstr;
+ 
+ unshift @ARGV,'-' unless @ARGV;
+ while (my $file = shift) {
+     my $h = ProductParser-&gt;new;
+     $h-&gt;parse_file($file);
+     insert_records($DB,$h);
+ }
+ $DB-&gt;disconnect;
+ 
+ sub insert_records {
+     my $db   = shift;
+     my $data = shift;
+     my $insert = $db-&gt;prepare(&lt;&lt;END) || die $db-&gt;errstr;
+ INSERT INTO ProductList (name,description,price,image,catalog)
+    VALUES (?,?,?,?,?)
+ END
+     my $update = $db-&gt;prepare(&lt;&lt;END) || die $db-&gt;errstr;
+ UPDATE ProductList 
+     SET name=?,description=?,price=?,image=?
+     WHERE catalog=?
+ END
+     ;
+     for my $item ($data-&gt;list) {
+        my $picture;
+        if ($item-&gt;{'image'} &amp;&amp; -e $item-&gt;{'image'}) {
+            open (I,$item-&gt;{'image'}) || die &quot;open: $!&quot;;
+            local $/ = undef;
+            $picture = &lt;I&gt;;
+            close I;
+        }
+        $item-&gt;{'image'} =~ basename($item-&gt;{'image'});
+        $insert-&gt;execute($item-&gt;{'name'},
+                         $item-&gt;{'description'},
+                         $item-&gt;{'price'},
+                         $picture,
+                         $item-&gt;{'catalog'}) 
+        ||
+        $update-&gt;execute($item-&gt;{'name'},
+                         $item-&gt;{'description'},
+                         $item-&gt;{'price'},
+                         $picture,
+                         $item-&gt;{'catalog'}
+                         ) 
+        ||
+        warn &quot;Can't load $item-&gt;{name}: &quot;,$db-&gt;errstr,&quot;\n&quot;;
+     }
+     $insert-&gt;finish; $update-&gt;finish;
+ }
+ __END__
+</PRE>
+
+<P>
+
+<DT><STRONG><A NAME="item_ProductParser">ProductParser.pm
+
+</A></STRONG><DD>
+<PRE> package ProductParser;
+ use HTML::Parser;
+ 
+ @ISA = 'HTML::Parser';
+ 
+ sub start {
+     my $self = shift;
+     my ($tag,$attr,$attrseq,$origtext) = @_;
+     if ($tag eq 'productlist') {
+        $self-&gt;{'list'} = [];
+        return;
+     }
+     if ($tag eq 'item') {
+        die &quot;item without a productlist&quot; unless $self-&gt;{'list'};
+        die &quot;no catalog number&quot; unless $attr-&gt;{'catalog'};
+        $self-&gt;{'currentitem'} = { catalog =&gt; $attr-&gt;{'catalog'} };
+        return;
+     }
+     if ($tag eq 'image') {
+        $self-&gt;{'currentitem'}-&gt;{'image'} = $attr-&gt;{'location'};
+        return;
+     }
+     die &quot;unknown tag&quot; unless $tag =~ /^(price|description|name)$/;
+     $self-&gt;{'current_text'} = '';
+ }
+ 
+ sub text {
+     my $self = shift;
+     my $text = shift;
+     HTML::Entities::decode($text);
+     $text =~ s/\n\s+/ /g;
+     $text =~ s/^\s+//;
+     $self-&gt;{'current_text'} .= $text;
+ }
+ 
+ sub end {
+     my $self = shift;
+     my $tag = shift;
+     if ($tag eq 'item') {
+        die &quot;&lt;/item&gt; without &lt;item&gt;&quot; unless $self-&gt;{'currentitem'};
+        push @{$self-&gt;{'list'}},$self-&gt;{'currentitem'};
+        return;
+     }
+     if ($tag =~ /^(price|description|name)$/) {
+        $self-&gt;{'currentitem'}-&gt;{$tag} = $self-&gt;{'current_text'};
+     }    
+ }
+ 
+ sub list {
+     return unless my $l = $_[0]-&gt;{'list'};
+     return @$l;
+ }
+ 1;
+ __END__
+</PRE>
+
+<P>
+
+<DT><STRONG><A NAME="item_products">products.xml
+
+</A></STRONG><DD>
+This is the source for the kitchen items in the test database. XML is cool.
+Wish I had time to talk about it!
+
+
+<P>
+
+<PRE> &lt;productlist&gt;
+   &lt;item catalog=&quot;64-2059954&quot;&gt;
+        &lt;name&gt;Chef's Choice Professional Knife Sharpener&lt;/name&gt;
+        &lt;price&gt;129.00&lt;/price&gt;
+        &lt;description&gt;
+        This automatic sharpener turns out knives -- both straight-edge
+        and serrated -- with a razor-sharp edge, and won't destroy the
+        temper of fine kitchen blades.  It's quick and easy to use:
+        Simply pass the knife once through each slot.  In a three-stage
+        process, blades are sharpened and honed on 100% diamond
+        abrasive pads, then stropped for a smooth edge.  Blades are
+        aligned at the perfect angle, and you can select the type
+        of edge, depending on the knife's use.  Made in the USA.
+        &lt;/description&gt;
+        &lt;image location=&quot;images/sharpener.jpg&quot;&gt;&lt;/image&gt;
+   &lt;/item&gt;
+   &lt;item catalog=&quot;64-137877&quot;&gt;
+        &lt;name&gt;Fini Aceto Balsamico&lt;/name&gt;
+         &lt;price&gt;10.50&lt;/price&gt;
+        &lt;description&gt;
+        This superb balsamic vinegar, made in Modena, Italy, from
+        sweet, white Trebbiano grapes, grows richer and darker as
+        it's aged for about two years, all the while being transferred
+        to smaller and smaller barrels of different aromatic woods
+        (oak, chestnut, mulberry and juniper).  Recipes included. 
+        8.8-oz bottle.
+        &lt;/description&gt;
+        &lt;image location=&quot;images/vinegar.jpg&quot;&gt;&lt;/image&gt;
+   &lt;/item&gt;
+   &lt;item catalog=&quot;64-1201565&quot;&gt;
+        &lt;name&gt;Waring Commercial Blender&lt;/name&gt;
+         &lt;price&gt;199.00&lt;/price&gt;
+        &lt;description&gt;
+        Waring's powerful blender is without peer.  With its two-speed
+        motor and newly designed blades, you can puree soups and
+        to silky-smooth consistency.  It liquefies fruit or cooked
+        vegetables completely, without leqving pulp, and has
+        superb ice-crushing capabilities.  The snug-fittig lid has an
+        insert so you can add ingredients while blending.  To promote
+        extra-long life, the machine shuts off if blades are blocked;
+        To restart, simply push the reset button.  Made of
+        stainless steel.  32-oz cap.  13 1/2&quot; high.
+        &lt;/description&gt;
+        &lt;image location=&quot;images/blender.jpg&quot;&gt;&lt;/image&gt;
+   &lt;/item&gt;
+   &lt;item catalog=&quot;64-135517&quot;&gt;
+        &lt;description&gt;
+        Each of our bowls is made by hand from a single piece of
+        beautifully grained hardwood that has been carefully
+        selected, kiln-dried and formed by skilled woodworkers.
+        Treated with care and a little oil, they will last for
+        years.
+        &lt;/description&gt;
+        &lt;image location=&quot;images/blender.jpg&quot;&gt;&lt;/image&gt;
+        &lt;name&gt;Handcrafted Salad Bowls&lt;/name&gt;
+         &lt;price&gt;39.00&lt;/price&gt;
+   &lt;/item&gt;
+   &lt;item catalog=&quot;64-2743953&quot;&gt;
+         &lt;price&gt;
+          32.00
+        &lt;/price&gt;
+        &lt;name&gt;
+          French Salt &amp; Pepper Mills
+        &lt;/name&gt;
+        &lt;description&gt;
+        Made by a small factory near Paris by genuine
+        French-speaking craftsmen, these beechwood and glass
+        mills reveal the colorful peppercorns and salt crystals
+        within.  They have adjustable grinding mechanisms and
+        refill easily from the top. 2 1/2&quot; diam., 6 1/4&quot; high.
+        Please specify White or Blue.
+        &lt;/description&gt;
+        &lt;image location=&quot;images/grinders.jpg&quot;&gt;&lt;/image&gt;
+   &lt;/item&gt;
+ &lt;/productlist&gt;
+</PRE>
+
+<P>
+
+<DT><STRONG><A NAME="item_load_stocklist">load_stocklist.pl
+
+</A></STRONG><DD>
+This script loads the StockList table from a flat file.
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ use DBI;
+ use constant DB=&gt;'dbi:mysql:perl_conference';
+ 
+ my $db = DBI-&gt;connect( DB,undef,undef,{PrintError=&gt;0} )
+     || die &quot;Connect failure: &quot;,$DBI::errstr;
+ 
+ my $insert = $db-&gt;prepare(&lt;&lt;END) || die $db-&gt;errstr;
+ INSERT INTO StockList (quantity,catalog)
+    VALUES (?,?)
+ END
+ 
+ my $update = $db-&gt;prepare(&lt;&lt;END) || die $db-&gt;errstr;
+ UPDATE StockList SET quantity=? WHERE catalog=?
+ END
+     ;
+ 
+ while (&lt;&gt;) {
+     chomp;
+     next unless my ($catalog,$quant) = split /\s+/;
+     $insert-&gt;execute($quant,$catalog) || $update-&gt;execute($quant,$catalog)
+        || warn &quot;Can't load $catalog: &quot;,$db-&gt;errstr,&quot;\n&quot;;
+ }
+ 
+ $db-&gt;disconnect;
+ __END__
+</PRE>
+
+<P>
+
+<DT><STRONG><A NAME="item_stocklist">stocklist.txt
+
+</A></STRONG><DD>
+The source for the StockList table. XML seemed like overkill for this one,
+so I used tab-delimited text.
+
+
+<P>
+
+<PRE> 64-2059954     12
+ 64-137877      100
+ 64-1201565     4
+ 64-135517      21
+ 64-2743953     2
+</PRE>
+
+<P>
+
+<DT><STRONG><A NAME="item_catalog">catalog.css
+
+</A></STRONG><DD>
+I use a cascading stylesheet to specify the appearance of all the pages in
+the shopping cart/catalog demo. Here it is.
+
+
+<P>
+
+<PRE> HTML,BODY {
+    background-color: #FFFFFF
+ }
+ 
+ H1,H2,H3,H4,P,I,EM,B,LI,UL,OL,DD,DT,ADDRESS,DL,A,STRONG  {
+     font-family: sans-serif;
+     background-color: transparent
+ }
+ INPUT {
+     font-family: sans-serif;
+     background-color: #FFFFFF
+ }
+ H1 {
+     font-size: 18pt;
+     color: red;
+ }
+ H2 {
+     font-size: 18pt;
+ }
+ H3 {
+     font-size: 14pt;
+ }
+ STRONG.alert {
+     color: red;
+ }
+ TH {
+     font-family: sans-serif;
+     padding: 0;
+     margin: 0;
+ }
+ TD {
+     font-family: sans-serif;
+     padding: 0;
+     margin: 0;
+ }
+ TD.highlight {
+     font-family: sans-serif;
+     background-color: rgb(200,255,255);
+     padding: 0;
+     margin: 0;
+ }
+</PRE>
+
+<P>
+
+</DL>
+<P>
+<HR>
+<H2><A NAME="Important_caveats">Important caveats
+
+</A></H2>
+Before you go out and base your next e-commerce system on these scripts,
+you should know that certain things were left out of the example for the
+sake of simplicity:
+
+
+<P>
+
+<OL>
+<LI><STRONG><A NAME="item_There_s_no_format_checking_of_th"> There's no format checking of the user's shipping
+information.  A real application would check the zip code for five
+numerals, the telephone number for 7 numerals, etc.
+
+</A></STRONG>
+<LI><STRONG><A NAME="item_There_s_no_checking_of_the_user_"> There's no checking of the user's credit card number.  A real
+application would use Jon Orwant's Business::CreditCard module to
+validate the credit card number, and possibly use an online payment
+system to get approval of the credit card!
+
+</A></STRONG>
+<LI><STRONG><A NAME="item_The_system_s_shopping_cart_sessi"> The system's shopping cart session IDs are too easy to guess,
+allowing people to peek at each other's shopping carts (but not get
+access to personal information).  A real world application would
+encrypt the session IDs before sending them out, and decrypt them on
+the way back in.
+
+</A></STRONG>
+<LI><STRONG><A NAME="item_If_a_user_creates_a_shopping_car"> If a user creates a shopping cart and then abandons the
+session without checking out the items, the cart remains in the system
+forever and the items continue to listed as obligated.  You need to
+write a small cron script that scans the Session table periodically
+and removes old shopping cart IDs. This is what the created field
+is designed for.
+
+</A></STRONG>
+<LI><STRONG><A NAME="item_The_order_system_doesn_t_handle_"> The order system doesn't handle sales tax, international
+shipping tarifs, etc.
+
+</A></STRONG>
+</OL>
+<P>
+<HR>
+<H1><A NAME="Conclusion">Conclusion
+
+</A></H1>
+You'll find more tricks in my books, articles and Web site. Here's where
+you can find them:
+
+
+<P>
+
+<DL>
+<DT><STRONG><A NAME="item__How">"How to Set Up and Maintain a Web Site"
+
+</A></STRONG><DD>
+General introduction to Web site care and feeding, with an emphasis on
+Apache. Addison-Wesley 1997.
+
+
+<P>
+
+Companion Web site at <A
+HREF="http://www.genome.wi.mit.edu/WWW/">http://www.genome.wi.mit.edu/WWW/</A>
+
+
+
+<P>
+
+<DT><STRONG><A NAME="item__Web">"Web Security, a Step-by-Step Reference Guide"
+
+</A></STRONG><DD>
+How to keep your Web site free from thieves, vandals, hooligans and other
+yahoos. Addison-Wesley 1998.
+
+
+<P>
+
+Companion Web site at <A
+HREF="http://www.w3.org/Security/Faq/">http://www.w3.org/Security/Faq/</A>
+
+
+<P>
+
+<DT><STRONG><A NAME="item__The">"The Official Guide to Programming with CGI.pm"
+
+</A></STRONG><DD>
+Everything I know about CGI.pm (and some things I don't!). John Wiley &amp;
+Sons, 1998.
+
+
+<P>
+
+Companion Web site at <A
+HREF="http://www.wiley.com/compbooks/stein/">http://www.wiley.com/compbooks/stein/</A>
+
+
+
+<P>
+
+<DT><STRONG><A NAME="item__Writing">"Writing Apache Modules in Perl and C"
+
+</A></STRONG><DD>
+Co-authored with Doug MacEachern. O'Reilly &amp; Associates.
+
+
+<P>
+
+Companion Web site at <A
+HREF="http://www.modperl.com/">http://www.modperl.com/</A>
+
+
+<P>
+
+<DT><STRONG><A NAME="item_WebTechniques">WebTechniques Columns
+
+</A></STRONG><DD>
+I write a monthly column for WebTechniques magazine. You can find
+back-issues and reprints at <A
+HREF="http://www.web-techniques.com/">http://www.web-techniques.com/</A>
+
+
+<P>
+
+<DT><STRONG><A NAME="item_The">The Perl Journal Columns
+
+</A></STRONG><DD>
+I write a quarterly column for TPJ. Source code listings are available at
+<A HREF="http://www.tpj.com/">http://www.tpj.com/</A>
+
+
+<P>
+
+</DL>
+Good reference works written by others:
+
+
+<P>
+
+<DL>
+<DT><STRONG><A NAME="item_Advanced">Advanced Perl Programming
+
+</A></STRONG><DD>
+By Sriram Srinivasan, published by O'Reilly &amp; Associates. Very good
+introduction to DBI, TK and the XS language.
+
+
+<P>
+
+<DT><STRONG><A NAME="item_Essential">Essential Perl Programming
+
+</A></STRONG><DD>
+By Joseph Hall with Randal Schwartz. An elegant guide to the dos and don'ts
+of Perl Programming. Published by Addison Wesley.
+
+
+<P>
+
+<DT><STRONG><A NAME="item_Perl">Perl Cookbook
+
+</A></STRONG><DD>
+By Tom Christiansen and Nathan Torkington. All the tricks and idioms in one
+convenient tome. Also published by O'Reilly &amp; Associates. Get this
+book!
+
+
+<P>
+
+</DL>
+</DL>
+<hr>
+<a href="../index.html">Perl Conference Tutorial Pages</a>
+    </BODY>
+
+    </HTML>

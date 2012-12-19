@@ -1,0 +1,115 @@
+<style type="text/css">
+<!--
+
+#personality {
+	position:absolute;
+	width:193px;
+	height:58px;
+	z-index:5;
+	left: 753px;
+	top: 3px;
+}
+#urlbar {
+	position:absolute;
+	width:746px;
+	height:21px;
+	z-index:6;
+	left: 3px;
+	top: 4px;
+	display:inline;
+}
+
+#urlbar p {
+	margin-top: 0px;
+	margin-left: 0px;	
+}	
+
+#topico {
+	position:absolute;
+	width:450px;
+	margin-top: 0px;
+	margin-left: 10px;
+	padding: 0px;
+	border: 0px;
+	height:36px;
+	z-index:2;
+	left: 11px;
+	top: 30px;
+	display:inline;
+}
+
+* html #urlbar { 
+	margin-top: -7px;  
+} 
+
+#mnu_buttons ul
+{
+padding-left: 0;
+margin-left: 0;
+background-color: #036;
+color: White;
+float: left;
+width: 100%;
+margin-top: 70px;
+font-family: arial, helvetica, sans-serif;
+}
+
+#mnu_buttons ul li { 
+	display: inline; 
+}
+
+#mnu_buttons ul li a
+{
+padding: 0.2em 1em;
+background-color: #036;
+color: White;
+text-decoration: none;
+float: left;
+border-right: 1px solid #fff;
+}
+
+#mnu_buttons ul li a:hover
+{
+background-color: #369;
+color: #fff;
+}
+
+#mnu_buttons a
+{
+display:block;
+width:90px;
+font-size: .8em;
+}
+
+.submenustyle{
+display: inline;
+margin-top: 0px;	
+margin-left: 0px;
+padding: 2px 1px;
+display: none;
+}
+
+.submenustyle a{
+	display:block;
+	float:left;
+	color:#333385;
+	text-decoration:none;
+	padding:0px 8px 0 8px;
+	height:24px;
+}
+
+.submenustyle a:hover{
+	color:#F60;
+	background:transparent repeat-x top left;
+}
+#submnudiv {
+	position:absolute;
+	width:1020px;
+	height:30px;
+	z-index:4;
+	left: 10px;
+	top: 108px;
+}
+
+-->
+</style>

@@ -1,0 +1,23 @@
+<STYLE type="text/css">
+<!-- 
+#menu {list-style-type:none; margin:0px 0px 0px 0px; padding:0;}
+
+#menu li {float:left; padding:0; margin:0 1px 0 0; position:relative; width:125px; height:1px; z-index:50;}
+#menu li a, #menu li a:visited {text-decoration:none;}
+
+#menu dl {position:absolute; top:0; left:0; width: 125px; margin: 0; padding: 0; background: transparent url(transparency.gif);}
+#menu dt {background: #000066; margin:0;font-size: 1em; border-bottom:1px solid #fff; width:125px; float:left; font-weight:bold}
+#menu dd {display:none; background: transparent; border-bottom:1px solid #cce; clear:left; margin:0; padding:0; color: #fff; 
+	        font-size: 1em; text-align:left;}
+
+#menu dt a, #menu dt a:visited {display:block; color:#ff8; padding: 3px 5px 3px 10px; width:125px;}
+#menu dd a, #menu dd a:visited {background:#000066; color:#ff8; text-decoration:none; display:block; padding:4px 5px 4px 20px; 
+	                              width:126px;}
+
+#menu li a:hover {border:0;}
+
+#menu li:hover dd, #menu li a:hover dd {display:block;}
+#menu li:hover dl, #menu li a:hover dl {width:151px; border-bottom:0Px solid #e2dfa8;}
+#menu li:hover dt a, #menu li a:hover dt a, #menu dd a:hover {background: #e2dfa8; color:#534;}
+-->
+</style>

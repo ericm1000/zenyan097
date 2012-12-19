@@ -1,0 +1,56 @@
+<?php
+// zenyan Login Module
+// Initial Writing: eric matthews
+// Date: june 30, 2010
+// License: Dual licensed under the MIT and GPL license
+/*
+This is the baseline login module for zenyan. Baseline is the key term here!
+There is a great deal of flexibility in using this module.
+*/
+// History/Customizations:
+/*
+
+*/
+//-------------MAIN-----------------------------------------------------------//
+//lib code includes
+require('eConfig/envref.php');
+include($php_envvars);
+include($php_dbms); //specific to dbms implementation
+include($php_applib);
+include($php_daclib);
+include($php_loggers);
+
+$_SESSION['loginstatus'] = '';
+
+//local dev time debug
+$locdebugstatus = '';
+$locdebug = '';
+$_SESSION['bugout'] = '';
+
+//session context
+session_start();  //required in order to get generated session key
+
+$_SESSION['initentry'] = 0;
+$_SESSION['lname'] = '';
+
+$myDbgateway = new dbgateway;
+$_SESSION['loginerr'] = unsuspendUser(trim($_REQUEST['lname']));
+header("Location: unsusp.php");
+
+//----------------------------------------------------------------------------//
+function unsuspendUser($unsuspuser)
+//----------------------------------------------------------------------------//
+{  
+   global $myDbgateway;
+     
+   $msg = "Account has been unsuspended.";   
+   
+   $updqry = "UPDATE gate SET   inactive_flg  =  ''  WHERE  lname  =  '$unsuspuser'";
+
+   $result = $myDbgateway->writeSQL($updqry); 
+
+   return $msg;
+}	
+  
+?>
+

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="stylesheet/mncontent.css">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Privacy Policy</title>
+</head>
+<body>
+<h1>FAQ's</h1>
+<h2>Problems with the Starterset</h2>
+<h3>pChart Problems</h3>
+<p>
+When running svrside_chart_toy1.php, if you receive an Http error 500 or Php
+message "Call to undefined function imagecreatetruecolor()". This is likely
+because the file "extension=php_gd2.dll" is commented out in the php.ini file.
+</p>	
+<p>
+Uncomment out this reference in both php.ini file in /Windows and in 
+/webroot/php. Then cycle the Apache server.
+</p>
+<p>
+Note in current builds .095 and later this should not be a problem.
+</p>
+<p>
+Note: This FAQ is for everyone that is working on this to add content to
+</p>
+</body>
+</html>

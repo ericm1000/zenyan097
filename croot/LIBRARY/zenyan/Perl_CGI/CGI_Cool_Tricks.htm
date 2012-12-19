@@ -1,0 +1,3235 @@
+    <HTML> 
+	<HEAD> 
+	    <TITLE>Cute Tricks With Perl and Apache</TITLE> 
+	</HEAD>
+
+	<BODY bgcolor="white">
+
+<a href="../index.html">Perl Conference Tutorial Pages</a>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#Cute_Tricks_With_Perl_and_Apache">Cute Tricks With Perl and Apache</A>
+	<LI><A HREF="#PART_I_WEB_SITE_CARE_AND_FEEDIN">PART I: WEB SITE CARE AND FEEDING</A>
+	<UL>
+
+		<LI><A HREF="#Logs_Logs_Logs_">Logs! Logs! Logs!</A>
+		<UL>
+
+			<LI><A HREF="#Log_rotation">Log rotation</A>
+			<LI><A HREF="#Log_rotation_and_archiving">Log rotation and archiving</A>
+			<LI><A HREF="#Log_rotation_compression_and_ar">Log rotation, compression and archiving</A>
+			<LI><A HREF="#Log_Parsing">Log Parsing</A>
+			<LI><A HREF="#Offline_Reverse_DNS_Resolution">Offline Reverse DNS Resolution</A>
+			<LI><A HREF="#Detecting_Robots">Detecting Robots</A>
+			<LI><A HREF="#Logging_to_syslog">Logging to syslog</A>
+			<LI><A HREF="#Logging_to_a_relational_database">Logging to a relational database</A>
+		</UL>
+
+		<LI><A HREF="#My_server_fell_down_and_it_can_t">My server fell down and it can't get up!</A>
+		<UL>
+
+			<LI><A HREF="#Monitoring_a_local_server">Monitoring a local server</A>
+			<LI><A HREF="#Monitoring_a_remote_server">Monitoring a remote server</A>
+			<LI><A HREF="#Resurrecting_Dead_Servers">Resurrecting Dead Servers</A>
+		</UL>
+
+		<LI><A HREF="#Site_Replication_and_Mirroring">Site Replication and Mirroring</A>
+		<UL>
+
+			<LI><A HREF="#Mirroring_Single_Pages">Mirroring Single Pages</A>
+			<LI><A HREF="#Mirroring_a_Document_Tree">Mirroring a Document Tree</A>
+			<LI><A HREF="#Checking_for_Bad_Links">Checking for Bad Links</A>
+		</UL>
+
+		<LI><A HREF="#Load_balancing">Load balancing</A>
+		<LI><A HREF="#Torture_Testing_a_Server">Torture Testing a Server</A>
+	</UL>
+
+	<LI><A HREF="#PART_II_MOD_PERL_FASTER_THAN">PART II: MOD_PERL - FASTER THAN A SPEEDING BULLET</A>
+	<UL>
+
+		<LI><A HREF="#Creating_Dynamic_Pages">Creating Dynamic Pages</A>
+		<LI><A HREF="#File_Filters">File Filters</A>
+		<UL>
+
+			<LI><A HREF="#Adding_a_Canned_Footer_to_Every_">Adding a Canned Footer to Every Page</A>
+			<LI><A HREF="#Dynamic_Navigation_Bar">Dynamic Navigation Bar</A>
+			<LI><A HREF="#On_the_Fly_Compression">On-the-Fly Compression</A>
+		</UL>
+
+		<LI><A HREF="#Access_Control">Access Control</A>
+		<LI><A HREF="#Authentication_and_Authorization">Authentication and Authorization</A>
+		<UL>
+
+			<LI><A HREF="#Authentication_with_NIS">Authentication with NIS</A>
+			<LI><A HREF="#Anonymous_Authentication">Anonymous Authentication</A>
+			<LI><A HREF="#Gender_Based_Authorization">Gender-Based Authorization</A>
+		</UL>
+
+		<LI><A HREF="#Proxy_Services">Proxy Services</A>
+		<UL>
+
+			<LI><A HREF="#A_Banner_Ad_Blocker">A Banner Ad Blocker</A>
+		</UL>
+
+		<LI><A HREF="#Customized_Logging">Customized Logging</A>
+		<UL>
+
+			<LI><A HREF="#Send_E_Mail_When_a_Particular_Pa">Send E-Mail When a Particular Page Gets Hit</A>
+			<LI><A HREF="#Writing_Log_Information_Into_a_R">Writing Log Information Into a Relational Database</A>
+		</UL>
+
+	<LI><A HREF="#Conclusion">Conclusion</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="Cute_Tricks_With_Perl_and_Apache">Cute Tricks With Perl and Apache
+
+</A></H1>
+Author: Lincoln Stein <A
+HREF="MAILTO:<lstein@cshl.org>"><lstein@cshl.org></A> Date: 3/15/99
+
+
+<P>
+
+<P>
+<HR>
+<H1><A NAME="PART_I_WEB_SITE_CARE_AND_FEEDIN">PART I: WEB SITE CARE AND FEEDING
+
+</A></H1>
+These scripts are designed to make your life as a Webmaster easier, leaving
+you time for more exciting things, like tango lessons.
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Logs_Logs_Logs_">Logs! Logs! Logs!
+
+</A></H2>
+Left to their own devices, the log files will grow without limit,
+eventually filling up your server's partition and bringing things to a
+grinding halt. But wait! Don't turn off logging or throw them away. Log
+files are your friends.
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Log_rotation">Log rotation
+
+</A></H3>
+Script I.1.1 shows the basic script for rotating log files. It renames the
+current ``access_log'' to ``access_log.0'', ``access_log.0'' to
+``access_log.1'', and so on. The oldest log gets deleted. Run it from a
+cron job to keep your log files from taking over. The faster your log files
+grow, the more frequently you should run the script.
+
+
+<P>
+
+---------------- Script I.1.1: Basic Log File Rotation ----------
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ $LOGPATH='/usr/local/apache/logs';
+ @LOGNAMES=('access_log','error_log','referer_log','agent_log');
+ $PIDFILE = 'httpd.pid';
+ $MAXCYCLE = 4;
+</PRE>
+
+<P>
+
+<PRE> chdir $LOGPATH;  # Change to the log directory
+ foreach $filename (@LOGNAMES) {
+    for (my $s=$MAXCYCLE; $s &gt;= 0; $s-- ) {
+        $oldname = $s ? &quot;$filename.$s&quot; : $filename;
+        $newname = join(&quot;.&quot;,$filename,$s+1);
+        rename $oldname,$newname if -e $oldname;
+    }
+ }
+ kill 'HUP',`cat $PIDFILE`;
+</PRE>
+
+<P>
+
+-----------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Log_rotation_and_archiving">Log rotation and archiving
+
+</A></H3>
+But some people don't want to delete the old logs. Wow, maybe some day you
+could sell them for a lot of money to a marketing and merchandising
+company! Script I.1.2 appends the oldest to a gzip archive. Log files
+compress extremely well and make great bedtime reading.
+
+
+<P>
+
+---------- Script I.1.2: Log File Rotation and Archiving ---------
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ $LOGPATH    = '/usr/local/apache/logs';
+ $PIDFILE    = 'httpd.pid';
+ $MAXCYCLE   = 4;
+ $GZIP       = '/bin/gzip';
+</PRE>
+
+<P>
+
+<PRE> @LOGNAMES=('access_log','error_log','referer_log','agent_log');
+ %ARCHIVE=('access_log'=&gt;1,'error_log'=&gt;1);
+</PRE>
+
+<P>
+
+<PRE> chdir $LOGPATH;  # Change to the log directory
+ foreach $filename (@LOGNAMES) {
+   system &quot;$GZIP -c $filename.$MAXCYCLE &gt;&gt; $filename.gz&quot; 
+        if -e &quot;$filename.$MAXCYCLE&quot; and $ARCHIVE{$filename};
+    for (my $s=$MAXCYCLE; $s &gt;= 0; $s-- ) {
+        $oldname = $s ? &quot;$filename.$s&quot; : $filename;
+        $newname = join(&quot;.&quot;,$filename,$s+1);
+        rename $oldname,$newname if -e $oldname;
+    }
+ }
+ kill 'HUP',`cat $PIDFILE`;
+</PRE>
+
+<P>
+
+-----------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Log_rotation_compression_and_ar">Log rotation, compression and archiving
+
+</A></H3>
+What's that? Someone broke into your computer, stole your log files and now <STRONG>he's</STRONG> selling it to a Web marketing and merchandising company? Shame on them. And
+on you for letting it happen. Script I.1.3 uses <EM>idea</EM> (part of the SSLEay package) to encrypt the log before compressing it. You
+need GNU tar to run this one. The log files are individually compressed and
+encrypted, and stamped with the current date.
+
+
+<P>
+
+---------- Script I.1.3: Log File Rotation and Encryption ---------
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ use POSIX 'strftime';
+ 
+ $LOGPATH     = '/home/www/logs';
+ $PIDFILE     = 'httpd.pid';
+ $MAXCYCLE    = 4;
+ $IDEA        = '/usr/local/ssl/bin/idea';
+ $GZIP        = '/bin/gzip';
+ $TAR         = '/bin/tar';
+ $PASSWDFILE  = '/home/www/logs/secret.passwd';
+ 
+ @LOGNAMES=('access_log','error_log','referer_log','agent_log');
+ %ARCHIVE=('access_log'=&gt;1,'error_log'=&gt;1);
+ 
+ chdir $LOGPATH;  # Change to the log directory
+ foreach $filename (@LOGNAMES) {
+     my $oldest = &quot;$filename.$MAXCYCLE&quot;;
+     archive($oldest) if -e $oldest and $ARCHIVE{$filename};
+     for (my $s=$MAXCYCLE; $s &gt;= 0; $s-- ) {
+         $oldname = $s ? &quot;$filename.$s&quot; : $filename;
+         $newname = join(&quot;.&quot;,$filename,$s+1);
+         rename $oldname,$newname if -e $oldname;
+     }
+ }
+ kill 'HUP',`cat $PIDFILE`;
+ 
+ sub archive {
+     my $f = shift;
+     my $base = $f;
+     $base =~ s/\.\d+$//;
+     my $fn = strftime(&quot;$base.%Y-%m-%d_%H:%M.gz.idea&quot;,localtime);
+     system &quot;$GZIP -9 -c $f | $IDEA -kfile $PASSWDFILE &gt; $fn&quot;;
+     system &quot;$TAR rvf $base.tar --remove-files $fn&quot;;
+ }
+</PRE>
+
+<P>
+
+-----------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Log_Parsing">Log Parsing
+
+</A></H3>
+There's a lot you can learn from log files. Script I.1.4 does the basic
+access log regular expression match. What you do with the split-out fields
+is limited by your imagination. Here's a typical log entry so that you can
+follow along:
+
+
+<P>
+
+portio.cshl.org - - [03/Feb/1998:17:42:15 -0500] ``GET
+/pictures/small_logo.gif HTTP/1.0'' 200 2172
+
+
+<P>
+
+------------- Script I.1.4: Basic Log Parsing -------------
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+</PRE>
+
+<P>
+
+<PRE> $REGEX=/^(\S+) (\S+) (\S+) \[([^]]+)\] &quot;(\w+) (\S+).*&quot; (\d+) (\S+)/;
+ while (&lt;&gt;) {
+    ($host,$rfc931,$user,$date,$request,$URL,$status,$bytes) = m/$REGEX/o;
+     &amp;collect_some_statistics;
+ }
+ &amp;print_some_statistics;
+</PRE>
+
+<P>
+
+<PRE> sub collect_some_statistics {
+   # for you to fill in
+ }
+</PRE>
+
+<P>
+
+<PRE> sub print_some_statistics {
+   # for you to fill in
+ }
+</PRE>
+
+<P>
+
+-----------------------------------------------------------
+
+
+<P>
+
+Script I.1.5 scans the log for certain status codes and prints out the top
+URLs or hosts that triggered them. It can be used to get quick-and-dirty
+usage statistics, to find broken links, or to detect certain types of
+breakin attempts. Use it like this:
+
+
+<P>
+
+<PRE> find_status.pl -t10 200 ~www/logs/access_log
+</PRE>
+
+<P>
+
+<PRE> TOP 10 URLS/HOSTS WITH STATUS CODE 200:
+</PRE>
+
+<P>
+
+<PRE>    REQUESTS  URL/HOST
+    --------  --------
+      1845    /www/wilogo.gif
+      1597    /cgi-bin/contig/sts_by_name?database=release
+      1582    /WWW/faqs/www-security-faq.html
+      1263    /icons/caution.xbm
+       930    /
+       886    /ftp/pub/software/WWW/cgi_docs.html
+       773    /cgi-bin/contig/phys_map
+       713    /icons/dna.gif
+       686    /WWW/pics/small_awlogo.gif
+ 
+---------- Script I.1.5: Find frequent status codes ---------
+ 
+ #!/usr/local/bin/perl
+ # File: find_status.pl
+ 
+ require &quot;getopts.pl&quot;;
+ &amp;Getopts('L:t:h') || die &lt;&lt;USAGE;
+ Usage: find_status.pl [-Lth] &lt;code1&gt; &lt;code2&gt; &lt;code3&gt; ...
+        Scan Web server log files and list a summary
+        of URLs whose requests had the one of the
+        indicated status codes.
+ Options:
+        -L &lt;domain&gt;  Ignore local hosts matching this domain
+        -t &lt;integer&gt; Print top integer URLS/HOSTS [10]
+        -h           Sort by host rather than URL
+ USAGE
+     ;
+ if ($opt_L) {
+     $opt_L=~s/\./\\./g;
+     $IGNORE = &quot;(^[^.]+|$opt_L)\$&quot;;
+ }
+ $TOP=$opt_t || 10;
+ 
+ while (@ARGV) {
+     last unless $ARGV[0]=~/^\d+$/;
+     $CODES{shift @ARGV}++;
+ }
+ 
+ while (&lt;&gt;) {
+     ($host,$rfc931,$user,$date,$request,$URL,$status,$bytes) =
+         /^(\S+) (\S+) (\S+) \[([^]]+)\] &quot;(\w+) (\S+).*&quot; (\d+) (\S+)/;
+     next unless $CODES{$status};
+     next if $IGNORE &amp;&amp; $host=~/$IGNORE/io;
+     $info = $opt_h ? $host : $URL;
+     $found{$status}-&gt;{$info}++;
+ }
+ 
+ foreach $status (sort {$a&lt;=&gt;$b;} sort keys %CODES) {
+     $info = $found{$status};
+     $count = $TOP;
+     foreach $i (sort {$info-&gt;{$b} &lt;=&gt; $info-&gt;{$a};} keys %{$info}) {
+         write;
+         last unless --$count;
+     }
+     $- = 0;  # force a new top-of-report
+ }
+ 
+ format STDOUT_TOP=
+ 
+ TOP @## URLS/HOSTS WITH STATUS CODE @##:
+     $TOP,                      $status
+ 
+     REQUESTS  URL/HOST
+     --------  --------
+ .
+ format STDOUT=
+     @#####    @&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
+     $info-&gt;{$i},$i
+ .
+</PRE>
+
+<P>
+
+-----------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Offline_Reverse_DNS_Resolution">Offline Reverse DNS Resolution
+
+</A></H3>
+Many sites turn off reverse name look-ups in order to improve server
+performance. The log files will contain the IP addresses of remote hosts,
+but not their DNS names. Script I.1.6 will do the reverse name resolution
+off-line. You can run it before the log rotation and archiving scripts,
+preferably on a machine that isn't busy serving Web requests at the same
+time.
+
+
+<P>
+
+This script maintains a cache of resolved names. Because performance is
+more important than completeness, if an address doesn't resolve after two
+seconds, it moves on to the next one and never tries that name again.
+
+
+<P>
+
+----------- Script I.1.6: Reverse DNS Resolution -----------
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ 
+ use constant TIMEOUT =&gt; 2;
+ $SIG{ALRM} = sub {die &quot;timeout&quot;};
+ 
+ while (&lt;&gt;) {
+     s/^(\S+)/lookup($1)/e;
+ } continue { 
+     print;
+ }
+ 
+ sub lookup {
+     my $ip = shift;
+     return $ip unless $ip=~/\d+\.\d+\.\d+\.\d+/;
+     return $CACHE{$ip} if exists $CACHE{$ip};
+     my @h = eval &lt;&lt;'END';
+     alarm(TIMEOUT);
+     my @i = gethostbyaddr(pack('C4',split('\.',$ip)),2);
+     alarm(0);
+     @i;
+ END
+     $CACHE{$ip} = $h[0];
+     return $CACHE{$ip} || $ip;
+ }
+</PRE>
+
+<P>
+
+-------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Detecting_Robots">Detecting Robots
+
+</A></H3>
+I was very upset a few months ago when I did some log analysis and
+discovered that 90% of my hits were coming from 10% of users, and that
+those 10% were all robots! Script I.1.7 is the script I used to crunch the
+log and perform the analysis. The script works like this:
+
+
+<P>
+
+<PRE>        1. we assume that anyone coming from the same IP address
+        with the same user agent within 30 minutes is the same 
+        person/robot (not quite right, but close enough).
+</PRE>
+
+<P>
+
+<PRE>        2. anything that fetches /robots.txt is probably a robot,
+        and a &quot;polite&quot; one, to boot
+</PRE>
+
+<P>
+
+<PRE>        3. we count the total number of accesses a user agent makes
+</PRE>
+
+<P>
+
+<PRE>        4. we average the interval between successive fetches
+</PRE>
+
+<P>
+
+<PRE>        5. we calculate an &quot;index&quot; which is the number of hits over
+        the interval.  Robots have higher indexes than people.
+</PRE>
+
+<P>
+
+<PRE>        6. we print everything out in a big tab-delimited table
+        for graphing
+</PRE>
+
+<P>
+
+By comparing the distribution of ``polite'' robots to the total
+distribution, we can make a good guess as to who the impolite robots are.
+
+
+<P>
+
+------------------------- Script I.1.7: Robo-Cop ----------------------
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ 
+ use Time::ParseDate;
+ use strict 'vars';
+ 
+ # after 30 minutes, we consider this a new session
+ use constant MAX_INTERVAL =&gt; 60*30;  
+ my (%HITS,%INT_NUMERATOR,%INT_DENOMINATOR,%POLITE,%LAST,$HITS);
+ 
+ # This uses a non-standard agent log with lines formatted like this:
+ # [08/Feb/1998:12:28:35 -0500] phila249-pri.voicenet.com &quot;Mozilla/3.01 (Win95; U)&quot; /cgi-bin/fortune
+ 
+ my $file = shift;
+ open (IN,$file=~/\.gz$/ ? &quot;zcat $file |&quot; : $file ) || die &quot;Can't open file/pipe: $!&quot;; 
+ 
+ while (&lt;IN&gt;) {
+     my($date,$host,$agent,$URL) = /^\[(.+)\] (\S+) &quot;(.*)&quot; (\S+)$/;
+     next unless $URL=~/\.(html|htm|txt)$/;
+ 
+     $HITS++;
+     $host = &quot;$host:$agent&quot;; # concatenate host and agent
+     $HITS{$host}++;
+     my $seconds = parsedate($date);
+     if ($LAST{$host}) {
+        my $interval = $seconds - $LAST{$host};
+        if ($interval &lt; MAX_INTERVAL) {
+            $INT_NUMERATOR{$host} += $interval;
+            $INT_DENOMINATOR{$host}++;
+        }
+     }
+     $LAST{$host} = $seconds;
+     $POLITE{$host}++ if $URL eq '/robots.txt';
+     print STDERR $HITS,&quot;\n&quot; if ($HITS % 1000) == 0;
+ }
+ 
+ # print out, sorted by hits
+ print join(&quot;\t&quot;,qw/Client Robot Hits Interval Hit_Percent Index/),&quot;\n&quot;;
+ foreach (sort {$HITS{$b}&lt;=&gt;$HITS{$a}} keys %HITS) {
+     next unless $HITS{$_} &gt;= 5;             # not enough total hits to mean much
+     next unless $INT_DENOMINATOR{$_} &gt;= 5;  # not enough consecutive hits to mean much
+ 
+     my $mean_interval = $INT_NUMERATOR{$_}/$INT_DENOMINATOR{$_};
+     my $percent_hits = 100*($HITS{$_}/$HITS);
+     my $index = $percent_hits/$mean_interval;
+ 
+     print join(&quot;\t&quot;,
+               $_,
+               $POLITE{$_} ? 'yes' : 'no',
+               $HITS{$_},
+               $mean_interval,
+               $percent_hits,
+               $index
+               ),&quot;\n&quot;;
+ }
+</PRE>
+
+<P>
+
+-----------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Logging_to_syslog">Logging to syslog
+
+</A></H3>
+If you run a large site with many independent servers, you might be annoyed
+that they all log into their own file systems rather than into a central
+location. Apache offers a little-known feature that allows it to send its
+log entries to a process rather than a file. The process (a Perl script,
+natch) can do whatever it likes with the logs. For instance, using Tom
+Christiansen's Syslog module to send the info to a remote syslog daemon.
+
+
+<P>
+
+Here's what you add to the Apache httpd.conf file: &lt;VirtualHost
+www.company1.com&gt; CustomLog ``| /usr/local/apache/bin/logger company1''
+common # blah blah &lt;/VirtualHost&gt;
+
+
+<P>
+
+<PRE>  &lt;VirtualHost www.company2.com&gt;
+     CustomLog &quot;| /usr/local/apache/bin/logger company2&quot; common
+     # blah blah
+  &lt;/VirtualHost&gt;
+  
+Do the same for each server on the local network.  
+</PRE>
+
+<P>
+
+Here's what you add to each Web server's syslog.conf (this assumes that the
+central logging host has the alias hostname ``loghost'':
+
+
+<P>
+
+<PRE>  local0.info                   @loghost
+</PRE>
+
+<P>
+
+Here's what you add to the central log host's syslog.conf:
+
+
+<P>
+
+<PRE>  local0.info                   /var/log/web/access_log
+</PRE>
+
+<P>
+
+Script I.1.8 shows the code for the ``logger'' program:
+
+
+<P>
+
+------------------- Script I.1.8 ``logger'' ------------------
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ # script: logger
+</PRE>
+
+<P>
+
+<PRE> use Sys::Syslog;
+</PRE>
+
+<P>
+
+<PRE> $SERVER_NAME = shift || 'www';
+ $FACILITY = 'local0';
+ $PRIORITY = 'info';
+</PRE>
+
+<P>
+
+<PRE> Sys::Syslog::setlogsock('unix');
+ openlog ($SERVER_NAME,'ndelay',$FACILITY);
+ while (&lt;&gt;) {
+     chomp;
+     syslog($PRIORITY,$_);
+ }
+ closelog;
+</PRE>
+
+<P>
+
+-------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Logging_to_a_relational_database">Logging to a relational database
+
+</A></H3>
+One of the selling points of the big commercial Web servers is that they
+can log to relational databases via ODBC. Big whoop. With a little help
+from Perl, Apache can do that too. Once you've got the log in a relational
+database, you can data mine to your heart's content.
+
+
+<P>
+
+This example uses the freeware mySQL DBMS. To prepare, create an
+appropriate database containing a table named ``access_log''. It should
+have a structure like this one. Add whatever indexes you think you need.
+Also notice that we truncate URLs at 255 characters. You might want to use
+TEXT columns instead.
+
+
+<P>
+
+<PRE> CREATE TABLE access_log (
+        when    datetime     not null,
+        host    varchar(255) not null,
+        method  char(4)      not null,
+        url     varchar(255) not null,
+        auth    varchar(50),
+        browser varchar(50),
+        referer varchar(255),
+        status  smallint(3)  not null,
+        bytes   int(8)       default 0
+ );
+</PRE>
+
+<P>
+
+Now create the following entries in httpd.conf: LogFormat ``\''%{%Y-%m-%d
+%H:%M:%S}t\`` <CODE>%h</CODE> \''%r\`` <CODE>%u</CODE> \''%{User-agent}i\``
+%{Referer}i <CODE>%s</CODE> %b'' mysql CustomLog ``|
+/usr/local/apache/bin/mysqllog'' mysql
+
+
+<P>
+
+Script I.1.9 is the source code for mysqllog.
+
+
+<P>
+
+------------------- Script I.1.9 ``mysqllog'' ------------------
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ # script: mysqllog
+ use DBI;
+</PRE>
+
+<P>
+
+<PRE> use constant DSN       =&gt; 'dbi:mysql:www';
+ use constant DB_TABLE  =&gt; 'access_log';
+ use constant DB_USER   =&gt; 'nobody';
+ use constant DB_PASSWD =&gt; '';
+</PRE>
+
+<P>
+
+<PRE> $PATTERN = '&quot;([^&quot;]+)&quot; (\S+) &quot;(\S+) (\S+) [^&quot;]+&quot; (\S+) &quot;([^&quot;]+)&quot; (\S+) (\d+) (\S+)';
+</PRE>
+
+<P>
+
+<PRE> $db = DBI-&gt;connect(DSN,DB_USER,DB_PASSWD) || die DBI-&gt;errstr;
+ $sth = $db-&gt;prepare(&quot;INSERT INTO ${\DB_TABLE} VALUES(?,?,?,?,?,?,?,?,?)&quot;) 
+     || die $db-&gt;errstr;
+ while (&lt;&gt;) {
+     chomp;
+     my($date,$host,$method,$url,$user,$browser,$referer,$status,$bytes) = /$PATTERN/o;
+     $user    = undef if $user    eq '-';
+     $referer = undef if $referer eq '-';
+     $browser = undef if $browser eq '-';
+     $bytes   = undef if $bytes   eq '-';
+     $sth-&gt;execute($date,$host,$method,$url,$user,$browser,$referer,$status,$bytes);
+ }
+ $sth-&gt;finish;
+ $db-&gt;disconnect;
+</PRE>
+
+<P>
+
+-------------------------------------------------------------
+
+
+<P>
+
+NOTE: Your database will grow very quickly. Make sure that you have a plan
+for truncating or archiving the oldest entries. Or have a lot of storage
+space handy! Also be aware that this will cause a lot of traffic on your
+LAN. Better start shopping around for 100BT hubs.
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="My_server_fell_down_and_it_can_t">My server fell down and it can't get up!
+
+</A></H2>
+Web servers are very stable and will stay up for long periods of time if
+you don't mess with them. However, human error can bring them down,
+particularly if you have a lot of developers and authors involved in
+running the site. The scripts in this section watch the server and send you
+an email message when there's a problem.
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Monitoring_a_local_server">Monitoring a local server
+
+</A></H3>
+The simplest script just tries to signal the Web server process. If the
+process has gone away, it sends out an S.O.S. See script I.2.1 shows the
+technique. Notice that the script has to run as <EM>root</EM> in order to successfully signal the server.
+
+
+<P>
+
+------------------------ I.2.1 ``localSOS'' --------------------
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ # script: localSOS
+</PRE>
+
+<P>
+
+<PRE> use constant PIDFILE  =&gt; '/usr/local/apache/var/run/httpd.pid';
+ $MAIL                 =  '/usr/sbin/sendmail';
+ $MAIL_FLAGS           =  '-t -oi';
+ $WEBMASTER            =  'webmaster';
+</PRE>
+
+<P>
+
+<PRE> open (PID,PIDFILE) || die PIDFILE,&quot;: $!\n&quot;;
+ $pid = &lt;PID&gt;;  close PID;
+ kill 0,$pid || sos();
+</PRE>
+
+<P>
+
+<PRE> sub sos {
+   open (MAIL,&quot;| $MAIL $MAIL_FLAGS&quot;) || die &quot;mail: $!&quot;;
+   my $date = localtime();
+   print MAIL &lt;&lt;END;
+ To: $WEBMASTER
+ From: The Watchful Web Server Monitor &lt;nobody&gt;
+ Subject: Web server is down
+</PRE>
+
+<P>
+
+<PRE> I tried to call the Web server at $date but there was
+ no answer.
+</PRE>
+
+<P>
+
+<PRE> Respectfully yours,
+</PRE>
+
+<P>
+
+<PRE> The Watchful Web Server Monitor   
+ END
+   close MAIL;
+ }
+</PRE>
+
+<P>
+
+--------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Monitoring_a_remote_server">Monitoring a remote server
+
+</A></H3>
+Local monitoring won't catch problems with remote machines, and they'll
+miss subtle problems that can happen when the Web server hangs but doesn't
+actually crash. A functional test is better. Script I.2.2 uses the LWP
+library to send a HEAD request to a bunch of servers. If any of them fails
+to respond, it sends out an SOS. This script does <STRONG>not</STRONG> have to run as a privileged user.
+
+
+<P>
+
+------------------------ I.2.2 ``remoteSOS'' --------------------
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ # script: remoteSOS
+</PRE>
+
+<P>
+
+<PRE> use LWP::Simple;
+ %SERVERS = (
+        &quot;Fred's server&quot;   =&gt; '<A HREF="http://www.fred.com">http://www.fred.com</A>',
+        &quot;Martha's server&quot; =&gt; '<A HREF="http://www.stewart-living.com">http://www.stewart-living.com</A>',
+        &quot;Bill's server&quot;   =&gt; '<A HREF="http://www.whitehouse.gov">http://www.whitehouse.gov</A>'
+        );
+ $MAIL                 =  '/usr/sbin/sendmail';
+ $MAIL_FLAGS           =  '-t -oi';
+ $WEBMASTER            =  'webmaster';
+</PRE>
+
+<P>
+
+<PRE> foreach (sort keys %SERVERS) {
+    sos($_) unless head($SERVERS{$_});
+ }
+</PRE>
+
+<P>
+
+<PRE> sub sos {
+   my $server = shift;
+   open (MAIL,&quot;| $MAIL $MAIL_FLAGS&quot;) || die &quot;mail: $!&quot;;
+   my $date = localtime();
+   print MAIL &lt;&lt;END;
+ To: $WEBMASTER
+ From: The Watchful Web Server Monitor &lt;nobody&gt;
+ Subject: $server is down
+</PRE>
+
+<P>
+
+<PRE> I tried to call $server at $date but there was
+ no one at home.
+</PRE>
+
+<P>
+
+<PRE> Respectfully yours,
+</PRE>
+
+<P>
+
+<PRE> The Watchful Web Server Monitor   
+ END
+   close MAIL;
+ }
+</PRE>
+
+<P>
+
+--------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Resurrecting_Dead_Servers">Resurrecting Dead Servers
+
+</A></H3>
+So it's not enough to get e-mail that the server's down, you want to
+relaunch it as well? Script I.2.3 is a hybrid of localSOS and remoteSOS
+that tries to relaunch the local server after sending out the SOS. It has
+to be run as <STRONG>root</STRONG>, unless you've made <EM>apachectl</EM>
+suid to root.
+
+
+<P>
+
+<PRE> ------------------------ I.2.2 &quot;webLazarus&quot; --------------------
+ 
+ #!/usr/local/bin/perl
+ # script: webLazarus
+ 
+ use LWP::Simple;
+ use constant URL       =&gt; '&lt;A HREF="http://presto.capricorn.com/"&gt;http://presto.capricorn.com/&lt;/A&gt;';
+ use constant APACHECTL =&gt; '/usr/local/apache/bin/apachectl';
+ $MAIL                  =  '/usr/sbin/sendmail';
+ $MAIL_FLAGS            =  '-t -oi';
+ $WEBMASTER             =  'lstein@prego.capricorn.com';
+ 
+ head(URL) || resurrect();
+ 
+ sub resurrect {
+     open (STDOUT,&quot;| $MAIL $MAIL_FLAGS&quot;) || die &quot;mail: $!&quot;;
+     select STDOUT; $| = 1;
+     open (STDERR,&quot;&gt;&amp;STDOUT&quot;);
+ 
+     my $date = localtime();
+     print &lt;&lt;END;
+ To: $WEBMASTER
+ From: The Watchful Web Server Monitor &lt;nobody&gt;
+ Subject: Web server is down
+ 
+ I tried to call the Web server at $date but there was
+ no answer.  I am going to try to resurrect it now:
+ 
+ Mumble, mumble, mumble, shazzzzammmm!
+ 
+ END
+     ;
+ 
+     system APACHECTL,'restart';
+     
+     print &lt;&lt;END;
+ 
+ That's the best I could do.  Hope it helped.
+ 
+ Worshipfully yours,
+ 
+ The Web Monitor
+ END
+     close STDERR;
+     close STDOUT;
+ }
+</PRE>
+
+<P>
+
+--------------------------------------------------------------
+
+
+<P>
+
+Here's the message you get when the script is successful:
+
+
+<P>
+
+<PRE> Date: Sat, 4 Jul 1998 14:55:38 -0400
+ To: lstein@prego.capricorn.com
+ Subject: Web server is down
+</PRE>
+
+<P>
+
+<PRE> I tried to call the Web server at Sat Jul  4 14:55:37 1998 but there was
+ no answer.  I am going to try to resurrect it now:
+</PRE>
+
+<P>
+
+<PRE> Mumble, mumble, mumble, shazzzzammmm!
+</PRE>
+
+<P>
+
+<PRE> /usr/local/apache/bin/apachectl restart: httpd not running, trying to start
+ [Sat Jul  4 14:55:38 1998] [debug] mod_so.c(258): loaded module setenvif_module
+ [Sat Jul  4 14:55:38 1998] [debug] mod_so.c(258): loaded module unique_id_module
+ /usr/local/apache/bin/apachectl restart: httpd started
+</PRE>
+
+<P>
+
+<PRE> That's the best I could do.  Hope it helped.
+</PRE>
+
+<P>
+
+<PRE> Worshipfully yours,
+</PRE>
+
+<P>
+
+<PRE> The Web Monitor
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Site_Replication_and_Mirroring">Site Replication and Mirroring
+
+</A></H2>
+Often you will want to mirror a page or set of pages from another server,
+for example, to distribute the load amongst several replicate servers, or
+to keep a set of reference pages handy. The LWP library makes this easy.
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Mirroring_Single_Pages">Mirroring Single Pages
+
+</A></H3>
+<PRE> % ./MirrorOne.pl
+ cats.html: Not Modified
+ dogs.html: OK
+ gillie_fish.html: Not Modified
+</PRE>
+
+<P>
+
+----------------------Script I.3.1 mirrorOne.pl--------------------
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ # mirrorOne.pl
+</PRE>
+
+<P>
+
+<PRE> use LWP::Simple;
+ use <A HREF="HTTP::Status">HTTP::Status</A>;
+</PRE>
+
+<P>
+
+<PRE> use constant DIRECTORY =&gt; '/local/web/price_lists';
+ %DOCUMENTS = (
+        'dogs.html'  =&gt; '<A HREF="http://www.pets.com/dogs/price_list.html">http://www.pets.com/dogs/price_list.html</A>',
+        'cats.html'  =&gt; '<A HREF="http://www.pets.com/cats/price_list.html">http://www.pets.com/cats/price_list.html</A>',
+        'gillie_fish.html' =&gt; '<A HREF="http://aquaria.com/prices.html">http://aquaria.com/prices.html</A>'
+        );
+ chdir DIRECTORY;
+ foreach (sort keys %DOCUMENTS) {
+    my $status = mirror($DOCUMENTS{$_},$_);
+    warn &quot;$_: &quot;,status_message($status),&quot;\n&quot;;
+ }
+</PRE>
+
+<P>
+
+-------------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Mirroring_a_Document_Tree">Mirroring a Document Tree
+
+</A></H3>
+With a little more work, you can recursively mirror an entire set of linked
+pages. Script I.3.2 mirrors the requested document and all subdocuments,
+using the LWP HTML::LinkExtor module to extract all the HTML links.
+
+
+<P>
+
+----------------------Script I.3.2 mirrorTree.pl--------------------
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ 
+ # File: mirrorTree.pl
+ 
+ use LWP::UserAgent;
+ use HTML::LinkExtor;
+ use URI::URL;
+ use <A HREF="File::Path">File::Path</A>;
+ use <A HREF="File::Basename">File::Basename</A>;
+ %DONE    = ();
+ 
+ my $URL = shift;
+ 
+ $UA     = new LWP::UserAgent;
+ $PARSER = HTML::LinkExtor-&gt;new();
+ $TOP    = $UA-&gt;request(<A HREF="HTTP::Request-&gt">HTTP::Request-&gt</A>;new(HEAD =&gt; $URL));
+ $BASE   = $TOP-&gt;base;
+ 
+ mirror(URI::URL-&gt;new($TOP-&gt;request-&gt;url));
+ 
+ sub mirror {
+     my $url = shift;
+ 
+     # get rid of query string &quot;?&quot; and fragments &quot;#&quot;
+     my $path = $url-&gt;path;
+     my $fixed_url = URI::URL-&gt;new ($url-&gt;scheme . '://' . $url-&gt;netloc . $path);
+ 
+     # make the URL relative
+     my $rel = $fixed_url-&gt;rel($BASE);
+     $rel .= 'index.html' if $rel=~m!/$! || length($rel) == 0;
+ 
+     # skip it if we've already done it
+     return if $DONE{$rel}++;
+ 
+     # create the directory if it doesn't exist already
+     my $dir = dirname($rel);
+     mkpath([$dir]) unless -d $dir;
+ 
+     # mirror the document
+     my $doc = $UA-&gt;mirror($fixed_url,$rel);
+     print STDERR &quot;$rel: &quot;,$doc-&gt;message,&quot;\n&quot;;
+     return if $doc-&gt;is_error;
+ 
+     # Follow HTML documents
+     return unless $rel=~/\.html?$/i;
+     my $base = $doc-&gt;base;
+     
+     # pull out the links and call us recursively
+     my @links = $PARSER-&gt;parse_file(&quot;$rel&quot;)-&gt;links;
+     my @hrefs = map { url($_-&gt;[2],$base)-&gt;abs } @links;
+ 
+     foreach (@hrefs) {
+        next unless is_child($BASE,$_);
+        mirror($_);
+     }
+ 
+ }
+ 
+ sub is_child {
+     my ($base,$url) = @_;
+     my $rel = $url-&gt;rel($base);
+     return ($rel ne $url) &amp;&amp; ($rel !~ m!^[/.]!);
+ }
+</PRE>
+
+<P>
+
+<PRE> --------------------------------------------------------------
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Checking_for_Bad_Links">Checking for Bad Links
+
+</A></H3>
+A slight modification of this last script allows you to check an entire
+document hierarchy (your own or someone else's) for bad links. The script
+shown in I.3.3 traverses a document, and checks each of the http:, ftp: and
+gopher: links to see if there's a response at the other end. Links that
+point to sub-documents are fetched and traversed as before, so you can
+check your whole site in this way.
+
+
+<P>
+
+<PRE>  % find_bad_links <A HREF="http://prego/apache-1.2/">http://prego/apache-1.2/</A>
+ checking <A HREF="http://prego/apache-1.2/">http://prego/apache-1.2/</A>...
+ checking <A HREF="http://prego/apache-1.2/manual/">http://prego/apache-1.2/manual/</A>...
+ checking <A HREF="http://prego/apache-1.2/manual/misc/footer.html">http://prego/apache-1.2/manual/misc/footer.html</A>...
+ checking <A HREF="http://prego/apache-1.2/manual/misc/header.html">http://prego/apache-1.2/manual/misc/header.html</A>...
+ checking <A HREF="http://prego/apache-1.2/manual/misc/nopgp.html">http://prego/apache-1.2/manual/misc/nopgp.html</A>...
+ checking <A HREF="http://www.yahoo.com/Science/Mathematics/Security_and_Encryption/">http://www.yahoo.com/Science/Mathematics/Security_and_Encryption/</A>...
+ checking <A HREF="http://www.eff.org/pub/EFF/Policy/Crypto/">http://www.eff.org/pub/EFF/Policy/Crypto/</A>...
+ checking <A HREF="http://www.quadralay.com/www/Crypt/Crypt.html">http://www.quadralay.com/www/Crypt/Crypt.html</A>...
+ checking <A HREF="http://www.law.indiana.edu/law/iclu.html">http://www.law.indiana.edu/law/iclu.html</A>...
+ checking <A HREF="http://bong.com/~brian">http://bong.com/~brian</A>...
+ checking <A HREF="http://prego/apache-1.2/manual/cgi_path.html">http://prego/apache-1.2/manual/cgi_path.html</A>...
+ checking <A HREF="http://www.ics.uci.edu/pub/ietf/http/">http://www.ics.uci.edu/pub/ietf/http/</A>...
+   . 
+   . 
+   .
+ BAD LINKS:
+ manual/misc/known_bugs.html : <A HREF="http://www.apache.org/dist/patches/apply_to_1.2b6/">http://www.apache.org/dist/patches/apply_to_1.2b6/</A>
+ manual/misc/fin_wait_2.html : <A HREF="http://www.freebsd.org/">http://www.freebsd.org/</A>
+ manual/misc/fin_wait_2.html : <A HREF="http://www.ncr.com/">http://www.ncr.com/</A>
+ manual/misc/compat_notes.html : <A HREF="http://www.eit.com/">http://www.eit.com/</A>
+ manual/misc/howto.html : <A HREF="http://www.zyzzyva.com/robots/alert/">http://www.zyzzyva.com/robots/alert/</A>
+ manual/misc/perf.html : <A HREF="http://www.software.hp.com/internet/perf/tuning.html">http://www.software.hp.com/internet/perf/tuning.html</A>
+ manual/misc/perf.html : <A HREF="http://www.qosina.com/~awm/apache/linux-tcp.html">http://www.qosina.com/~awm/apache/linux-tcp.html</A>
+ manual/misc/perf.html : <A HREF="http://www.sun.com/sun-on-net/Sun.Internet.Solutions/performance/">http://www.sun.com/sun-on-net/Sun.Internet.Solutions/performance/</A>
+ manual/misc/perf.html : <A HREF="http://www.sun.com/solaris/products/siss/">http://www.sun.com/solaris/products/siss/</A>
+ manual/misc/nopgp.html : <A HREF="http://www.yahoo.com/Science/Mathematics/Security_and_Encryption/">http://www.yahoo.com/Science/Mathematics/Security_and_Encryption/</A>
+ 
+ 152 documents checked
+ 11 bad links
+</PRE>
+
+<P>
+
+----------------------Script I.3.2 find_bad_links.pl--------------------
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ 
+ # File: find_bad_links.pl
+  
+ use LWP::UserAgent;
+ use HTML::LinkExtor;
+ use URI::URL;
+ use WWW::RobotRules;
+ 
+ %CAN_HANDLE = ('http'=&gt;1,
+               'gopher'=&gt;1,
+               # 'ftp'=&gt;1,   # timeout problems?
+               );
+ %OUTCOME = ();
+ $CHECKED = $BAD = 0;
+ @BAD = ();
+ 
+ my $URL = shift;
+ 
+ $UA     = new LWP::UserAgent;
+ $PARSER = HTML::LinkExtor-&gt;new();
+ $TOP    = $UA-&gt;request(<A HREF="HTTP::Request-&gt">HTTP::Request-&gt</A>;new(HEAD =&gt; $URL));
+ $BASE   = $TOP-&gt;base;
+ 
+ # handle robot rules
+ my $robots = URI::URL-&gt;new('robots.txt',$BASE-&gt;scheme.'://'.$BASE-&gt;netloc);
+ my $robots_text = $UA-&gt;request(<A HREF="HTTP::Request-&gt">HTTP::Request-&gt</A>;new(GET=&gt;$robots))-&gt;content;
+ $ROBOTRULES = WWW::RobotRules-&gt;new;
+ $ROBOTRULES-&gt;parse($robots-&gt;abs,$robots_text);
+ 
+ check_links(URI::URL-&gt;new($TOP-&gt;request-&gt;url));
+ if (@BAD) {
+     print &quot;\nBAD LINKS:\n&quot;;
+     print join(&quot;\n&quot;,@BAD),&quot;\n\n&quot;;
+ }
+ print &quot;$CHECKED documents checked\n&quot;,scalar(@BAD),&quot; bad links\n&quot;;
+ 
+ sub check_links {
+     my $url = shift;
+     my $fixed_url = $url;
+     $fixed_url =~ s/\#.+$//;
+     
+     return 1 unless $CAN_HANDLE{$url-&gt;scheme};
+     
+     # check cached outcomes
+     return $OUTCOME{$fixed_url} if exists $OUTCOME{$fixed_url};
+     
+     print STDERR &quot;checking $fixed_url...\n&quot;;
+     $CHECKED++;
+     
+     my $rel = $url-&gt;rel($BASE) || 'index.html';
+     my $child = is_child($BASE,$url);
+     $UA-&gt;timeout(5);
+     my $doc = $d = $UA-&gt;request(<A HREF="HTTP::Request-&gt">HTTP::Request-&gt</A>;new(($child ? 'GET' : 'HEAD' )=&gt;$url));
+     $OUTCOME{$fixed_url} = $doc-&gt;is_success;
+     
+     return $OUTCOME{$fixed_url} 
+     unless $ROBOTRULES-&gt;allowed($fixed_url) 
+        &amp;&amp; $child &amp;&amp; $doc-&gt;header('Content-type') eq 'text/html';
+     
+     # Follow HTML documents
+     my $base = $doc-&gt;base;
+     
+     # pull out the links and call us recursively
+     my @links = $PARSER-&gt;parse($doc-&gt;content)-&gt;links;
+     my @hrefs = map { url($_-&gt;[2],$base)-&gt;abs } @links;
+     
+     foreach (@hrefs) {
+        next if check_links($_);
+        push (@BAD,&quot;$rel : $_&quot;);
+     }
+     1;
+ }
+ 
+ sub is_child {
+     my ($base,$url) = @_;
+     my $rel = $url-&gt;rel($base);
+     return ($rel ne $url) &amp;&amp; ($rel !~ m!^[/.]!);
+ }
+</PRE>
+
+<P>
+
+--------------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Load_balancing">Load balancing
+
+</A></H2>
+You've hit the big time, and your site is getting more hits than you ever
+dreamed of. Millions, zillions of hits. What's that? System load just
+passed 50 and response time is getting kinda' s-l-o-w-w-w?
+
+
+<P>
+
+Perl to the rescue. Set up several replica Web servers with different
+hostnames and IP addresses. Run this script on the ``main'' site and watch
+it round-robin the requests to the replica servers. It uses IO::Socket to
+listen for incoming requests on port 80. It then changes its privileges to
+run as nobody.nogroup, just like a real Web server. Next it preforks itself
+a few times (and you always thought preforking was something fancy, didn't
+you?), and goes into an <CODE>accept()</CODE> loop. Each time an incoming
+session comes in, it forks off another child to handle the request. The
+child reads the HTTP request and issues the an HTTP redirection to send the
+browser to a randomly selected server.
+
+
+<P>
+
+NOTE: Another way to do this is to have multiple ``A'' records defined for
+your server's hostname and let DNS caching distribute the load.
+
+
+<P>
+
+---------------- Script I.4.1: A Load Balancing ``Web Server'' ---------
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ 
+ # list of hosts to balance between
+ @HOSTS = qw/www1.web.org www2.web.org www3.web.org www4.web.org/;
+ 
+ use IO::Socket;
+ $SIG{CHLD} = sub { wait() };
+ $ENV{'PATH'}='/bin:/usr/bin';
+ chomp($hostname = `/bin/hostname`);
+ 
+ # Listen on port 80
+ $sock = IO::Socket::INET-&gt;new(Listen  =&gt; 5,
+                              LocalPort =&gt; 80,
+                              LocalAddr =&gt; $hostname,
+                              Reuse     =&gt; 1,
+                              Proto    =&gt; 'tcp');
+ 
+ # become &quot;nobody&quot;
+ $nobody  = (getpwnam('nobody'))[2]  || die &quot;nobody is nobody&quot;;
+ $nogroup = (getgrnam('nogroup'))[2] || die &quot;can't grok nogroup&quot;;
+ ($&lt;,$() = ($&gt;,$)) = ($nobody,$nogroup); # get rid of root privileges!
+ ($\,$/) = (&quot;\r\n&quot;,&quot;\r\n\r\n&quot;);          # CR/LF on output/input
+ 
+ # Go into server mode
+ close STDIN; close STDOUT; close STDERR;
+ 
+ # prefork -- gee is that all there is to it?
+ fork() &amp;&amp; fork() &amp;&amp; fork() &amp;&amp; fork() &amp;&amp; exit 0;
+ 
+ # start accepting connections
+ while (my $s = $sock-&gt;accept()) {
+     do { $s-&gt;close; next; } if fork();
+     my $request = &lt;$s&gt;;
+     redirect($1,$s) if $request=~/(?:GET|POST|HEAD|PUT)\s+(\S+)/;
+     $s-&gt;flush;
+     undef $s;
+     exit 0;
+ }
+ 
+ sub redirect {
+     my ($url,$s) = @_;
+     my $host = $HOSTS[rand(@HOSTS)];
+     print $s &quot;HTTP/1.0 301 Moved Temporarily&quot;;
+     print $s &quot;Server: Lincoln's Redirector/1.0&quot;;
+     print $s &quot;Location: <A HREF="http://">http://</A>${host}${url}&quot;;
+     print $s &quot;&quot;;
+ }
+</PRE>
+
+<P>
+
+----------------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Torture_Testing_a_Server">Torture Testing a Server
+
+</A></H2>
+Any server written in C suffers the risk of static buffer overflow bugs. In
+the past, these bugs have led to security compromises and Web server
+breakins. Script I.2.3 torture tests servers and CGI scripts by sending
+large amounts of random date to them. If the server crashes, it probably
+contains a buffer overflow bug.
+
+
+<P>
+
+Here's what you see when a server crashes:
+
+
+<P>
+
+<PRE>  % torture.pl -t 1000 -l 5000 <A HREF="http://www.capricorn.com">http://www.capricorn.com</A>
+  torture.pl version 1.0 starting
+  Base URL:               <A HREF="http://www.capricorn.com/cgi-bin/search">http://www.capricorn.com/cgi-bin/search</A>
+  Max random data length: 5000
+  Repetitions:            1000
+  Post:                   0
+  Append to path:         0
+  Escape URLs:            0
+</PRE>
+
+<P>
+
+<PRE>  200 OK
+  200 OK
+  200 OK
+  200 OK
+  200 OK
+  500 Internal Server Error
+  500 Could not connect to www.capricorn.com:80
+  500 Could not connect to www.capricorn.com:80
+  500 Could not connect to www.capricorn.com:80
+</PRE>
+
+<P>
+
+---------------------Script I.5.1: torture tester------------------
+
+
+<P>
+
+<PRE> #!/usr/local/bin/perl
+ 
+ # file: torture.pl
+ # Torture test Web servers and scripts by sending them large arbitrary URLs
+ # and record the outcome.
+ 
+ use LWP::UserAgent;
+ use URI::Escape 'uri_escape';
+ require &quot;getopts.pl&quot;;
+ 
+ $USAGE = &lt;&lt;USAGE;
+ Usage: $0 -[options] URL
+ Torture-test Web servers and CGI scripts
+ 
+ Options:
+  -l &lt;integer&gt;  Max length of random URL to send [1024 bytes]
+  -t &lt;integer&gt;  Number of times to run the test [1]
+  -P            Use POST method rather than GET method
+  -p            Attach random data to path rather than query string
+  -e            Escape the query string before sending it
+ USAGE
+ ;
+ $VERSION = '1.0';
+ 
+ # process command line
+ &amp;Getopts('l:t:Ppe') || die $USAGE;
+ 
+ # get parameters
+ $URL    = shift || die $USAGE;
+ $MAXLEN = $opt_l ne '' ? $opt_l : 1024;
+ $TIMES  = $opt_t || 1;
+ $POST   = $opt_P || 0;
+ $PATH   = $opt_p || 0;
+ $ESCAPE = $opt_e || 0;
+ 
+ # cannot do both a post and a path at the same time
+ $POST = 0 if $PATH;
+ 
+ # create an LWP agent
+ my $agent = new LWP::UserAgent;
+ 
+ print &lt;&lt;EOF;
+ torture.pl version $VERSION starting
+ Base URL:               $URL
+ Max random data length: $MAXLEN
+ Repetitions:            $TIMES
+ Post:                   $POST
+ Append to path:         $PATH
+ Escape URLs:            $ESCAPE
+ 
+ EOF
+ ;
+ 
+ # Do the test $TIMES times
+ while ($TIMES) {
+     # create a string of random stuff
+     my $garbage = random_string(rand($MAXLEN));
+     $garbage = uri_escape($garbage) if $ESCAPE;
+     my $url = $URL;
+     my $request;
+ 
+     if (length($garbage) == 0) { # if no garbage to add, just fetch URL
+        $request = new <A HREF="HTTP::Request">HTTP::Request</A> ('GET',$url);
+     }
+ 
+     elsif ($POST) {            # handle POST request
+        my $header = new <A HREF="HTTP::Headers">HTTP::Headers</A> (
+                                        Content_Type =&gt; 'application/x-www-form-urlencoded',
+                                        Content_Length =&gt; length($garbage)
+                                        );
+        # garbage becomes the POST content
+        $request = new <A HREF="HTTP::Request">HTTP::Request</A> ('POST',$url,$header,$garbage);
+        
+     } else {                   # handle GET request
+        
+        if ($PATH) {            # append garbage to the base URL
+            chop($url) if substr($url,-1,1) eq '/'; 
+            $url .= &quot;/$garbage&quot;;
+        } else {                # append garbage to the query string
+            $url .= &quot;?$garbage&quot;;
+        }
+        
+        $request = new <A HREF="HTTP::Request">HTTP::Request</A> ('GET',$url);
+     }
+     
+     # do the request and fetch the response
+     my $response = $agent-&gt;request($request);
+     
+     # print the numeric response code and the message
+     print $response-&gt;code,' ',$response-&gt;message,&quot;\n&quot;;
+ 
+ } continue { $TIMES-- }
+ 
+ # return some random data of the requested length
+ sub random_string {
+     my $length = shift;
+     return undef unless $length &gt;= 1;
+     return join('',map chr(rand(255)),0..$length-1);
+ }
+ 
+-------------------------------------------------------------- 
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H1><A NAME="PART_II_MOD_PERL_FASTER_THAN">PART II: MOD_PERL -- FASTER THAN A SPEEDING BULLET
+
+</A></H1>
+<EM>mod_perl</EM> is Doug MacEachern's embedded Perl for Apache. With a mod_perl-enabled
+server, there's no tedious waiting around while the Perl interpreter fires
+up, reads and compiles your script. It's right there, ready and waiting.
+What's more, once compiled your script remains in memory, all charged and
+raring to go. Suddenly those sluggish Perl CGI scripts race along at
+compiled C speeds...or so it seems.
+
+
+<P>
+
+Most CGI scripts will run unmodified under mod_perl using the
+Apache::Registry CGI compatability layer. But that's not the whole story.
+The exciting part is that mod_perl gives you access to the Apache API,
+letting you get at the innards of the Apache server and change its behavior
+in powerful and interesting ways. This section will give you a feel for the
+many things that you can do with mod_perl.
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Creating_Dynamic_Pages">Creating Dynamic Pages
+
+</A></H2>
+This is a ho-hum because you can do it with CGI and with Apache::Registry.
+Still, it's worth seeing a simple script written using the strict mod_perl
+API so you see what it looks like. Script II.1.1 prints out a little hello
+world message.
+
+
+<P>
+
+Install it by adding a section like this one to one of the configuration
+files:
+
+
+<P>
+
+<PRE>  &lt;Location /hello/world&gt;
+    SetHandler  perl-script
+    PerlHandler Apache::Hello
+  &lt;/Location&gt;
+</PRE>
+
+<P>
+
+------------------Script II.1.1 Apache::Hello --------------------
+
+
+<P>
+
+<PRE> package Apache::Hello;
+ # file: Apache::Hello.pm
+</PRE>
+
+<P>
+
+<PRE> use strict vars;
+ use Apache::Constants ':common';
+</PRE>
+
+<P>
+
+<PRE> sub handler {
+     my $r = shift;
+     $r-&gt;content_type('text/html');
+     $r-&gt;send_http_header;
+     my $host = $r-&gt;get_remote_host;
+     $r-&gt;print(&lt;&lt;END);
+ &lt;HTML&gt;
+ &lt;HEADER&gt;
+ &lt;TITLE&gt;Hello There&lt;/TITLE&gt;
+ &lt;/HEADER&gt;
+ &lt;BODY&gt;
+ &lt;H1&gt;Hello $host&lt;/H1&gt;
+ Hello to all the nice people at the Perl conference.  Lincoln is
+ trying really hard.  Be kind.
+ &lt;/BODY&gt;
+ &lt;/HTML&gt;
+ END
+     return OK;
+ }
+ 1;
+</PRE>
+
+<P>
+
+----------------------------------------------------------------
+
+
+<P>
+
+You can do all the standard CGI stuff, such as reading the query string,
+creating fill-out forms, and so on. In fact, CGI.pm works with mod_perl,
+giving you the benefit of sticky forms, cookie handling, and elegant HTML
+generation.
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="File_Filters">File Filters
+
+</A></H2>
+This is where the going gets fun. With mod_perl, you can install a
+<EM>content handler</EM> that works a lot like a four-letter word starrer-outer, but a lot faster.
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Adding_a_Canned_Footer_to_Every_">Adding a Canned Footer to Every Page
+
+</A></H3>
+Script II.2.1 adds a canned footer to every HTML file. The footer contains
+a copyright statement, plus the modification date of the file. You could
+easily extend this to add other information, such as a page hit counter, or
+the username of the page's owner.
+
+
+<P>
+
+This can be installed as the default handler for all files in a particular
+subdirectory like this:
+
+
+<P>
+
+<PRE>  &lt;Location /footer&gt;
+    SetHandler perl-script
+    PerlHandler Apache::Footer
+  &lt;/Location&gt;
+</PRE>
+
+<P>
+
+Or you can declare a new ``.footer'' extension and arrange for all files
+with this extension to be passed through the footer module:
+
+
+<P>
+
+<PRE>  AddType text/html .footer
+  &lt;Files ~ &quot;\.footer$&quot;&gt;
+     SetHandler  perl-script
+     PerlHandler Apache::Footer
+  &lt;/Files&gt;
+</PRE>
+
+<P>
+
+------------------Script II.2.1 Apache::Footer --------------------
+
+
+<P>
+
+<PRE> package Apache::Footer;
+ # file Apache::Footer.pm
+</PRE>
+
+<P>
+
+<PRE> use strict vars;
+ use Apache::Constants ':common';
+ use IO::File;
+</PRE>
+
+<P>
+
+<PRE> sub handler {
+     my $r = shift;
+     return DECLINED unless $r-&gt;content_type() eq 'text/html';
+     my $file = $r-&gt;filename;
+     return DECLINED unless $fh=IO::File-&gt;new($file);
+     my $modtime = localtime((stat($file))[9]);
+     my $footer=&lt;&lt;END;
+ &lt;hr&gt;
+ &amp;copy; 1998 &lt;a href=&quot;<A HREF="http://www.ora.com/&quot">http://www.ora.com/&quot</A>;&gt;O\'Reilly &amp;amp; Associates&lt;/a&gt;&lt;br&gt;
+ &lt;em&gt;Last Modified: $modtime&lt;/em&gt;
+ END
+ ;
+     $r-&gt;send_http_header;
+    
+     while (&lt;$fh&gt;) {
+         s!(&lt;/BODY&gt;)!$footer$1!oi;
+     } continue {
+         $r-&gt;print($_);
+     }
+</PRE>
+
+<P>
+
+<PRE>     return OK;
+ }
+</PRE>
+
+<P>
+
+<PRE> 1;
+</PRE>
+
+<P>
+
+------------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Dynamic_Navigation_Bar">Dynamic Navigation Bar
+
+</A></H3>
+Sick of hand-coding navigation bars in every HTML page? Less than enthused
+by the Java &amp; JavaScript hacks? Here's a dynamic navigation bar
+implemented as a server side include.
+
+
+<P>
+
+First create a global configuration file for your site. The first column is
+the top of each major section. The second column is the label to print in
+the navigation bar
+
+
+<P>
+
+<PRE> # Configuration file for the navigation bar
+ /index.html             Home
+ /new/                   What's New
+ /tech/                  Tech Support
+ /download/              Download
+ /dev/zero               Customer support              
+ /dev/null               Complaints
+</PRE>
+
+<P>
+
+Then, at the top (or bottom) of each HTML page that you want the navigation
+bar to appear on, add this comment:
+
+
+<P>
+
+<PRE>  &lt;!--#NAVBAR--&gt;
+</PRE>
+
+<P>
+
+Now add Apache::NavBar to your system (Script II.2.2). This module parses
+the configuration file to create a ``navigation bar object''. We then call
+the navigation bar object's <CODE>to_html()</CODE> method in order to
+generate the HTML for the navigation bar to display on the current page (it
+will be different for each page, depending on what major section the page
+is in).
+
+
+<P>
+
+The next section does some checking to avoid transmitting the page again if
+it is already cached on the browser. The effective last modified time for
+the page is either the modification time of its HTML source code, or the
+navbar's configuration file modification date, whichever is more recent.  
+
+
+<P>
+
+The remainder is just looping through the file a section at a time,
+searching for the &lt;!--NAVBAR--&gt; comment, and substituting the
+navigation bar HTML.
+
+
+<P>
+
+------------------Script II.2.2 Apache::NavBar --------------------
+
+
+<P>
+
+<PRE> package Apache::NavBar;
+ # file Apache/NavBar.pm
+ 
+ use strict;
+ use Apache::Constants qw(:common);
+ use Apache::File ();
+ 
+ my %BARS = ();
+ my $TABLEATTS   = 'WIDTH=&quot;100%&quot; BORDER=1';
+ my $TABLECOLOR  = '#C8FFFF';
+ my $ACTIVECOLOR = '#FF0000';
+ 
+ sub handler {
+     my $r = shift;
+ 
+     my $bar = read_configuration($r)         || return DECLINED;
+     $r-&gt;content_type eq 'text/html'          || return DECLINED;
+     my $fh = Apache::File-&gt;new($r-&gt;filename) || return DECLINED;
+     my $navbar = $bar-&gt;to_html($r-&gt;uri);
+     
+     $r-&gt;update_mtime($bar-&gt;modified);
+     $r-&gt;set_last_modified;
+     my $rc = $r-&gt;meets_conditions;
+     return $rc unless $rc == OK;
+</PRE>
+
+<P>
+
+<PRE>     $r-&gt;send_http_header;
+     return OK if $r-&gt;header_only;
+ 
+     local $/ = &quot;&quot;;
+     while (&lt;$fh&gt;) {
+        s:&lt;!--NAVBAR--&gt;:$navbar:oi;
+     } continue { 
+        $r-&gt;print($_); 
+     }
+ 
+     return OK;
+ }
+ 
+ # read the navigation bar configuration file and return it as a
+ # hash.
+ sub read_configuration {
+     my $r = shift;
+     my $conf_file;
+     return unless $conf_file = $r-&gt;dir_config('NavConf');
+     return unless -e ($conf_file = $r-&gt;server_root_relative($conf_file));
+     my $mod_time = (stat _)[9];
+     return $BARS{$conf_file} if $BARS{$conf_file} 
+       &amp;&amp; $BARS{$conf_file}-&gt;modified &gt;= $mod_time;
+     return $BARS{$conf_file} = NavBar-&gt;new($conf_file);
+ }
+ 
+ package NavBar;
+</PRE>
+
+<P>
+
+<PRE> # create a new NavBar object
+ sub new {
+     my ($class,$conf_file) = @_;
+     my (@c,%c);
+     my $fh = Apache::File-&gt;new($conf_file) || return;
+     while (&lt;$fh&gt;) {
+        chomp;
+        s/^\s+//; s/\s+$//;   #fold leading and trailing whitespace
+        next if /^#/ || /^$/; # skip comments and empty lines
+        next unless my($url, $label) = /^(\S+)\s+(.+)/;
+        push @c, $url;     # keep the url in an ordered array
+        $c{$url} = $label; # keep its label in a hash
+     }
+     return bless {'urls' =&gt; \@c,
+                  'labels' =&gt; \%c,
+                  'modified' =&gt; (stat $conf_file)[9]}, $class;
+ }
+ 
+ # return ordered list of all the URIs in the navigation bar
+ sub urls  { return @{shift-&gt;{'urls'}}; }
+ 
+ # return the label for a particular URI in the navigation bar
+ sub label { return $_[0]-&gt;{'labels'}-&gt;{$_[1]} || $_[1]; }
+ 
+ # return the modification date of the configuration file
+ sub modified { return $_[0]-&gt;{'modified'}; }
+</PRE>
+
+<P>
+
+<PRE> sub to_html {
+     my $self = shift;
+     my $current_url = shift;
+     my @cells;
+     for my $url ($self-&gt;urls) {
+        my $label = $self-&gt;label($url);
+        my $is_current = $current_url =~ /^$url/;
+        my $cell = $is_current ?
+            qq(&lt;FONT COLOR=&quot;$ACTIVECOLOR&quot;&gt;$label&lt;/FONT&gt;)
+                : qq(&lt;A HREF=&quot;$url&quot;&gt;$label&lt;/A&gt;);
+        push @cells, 
+        qq(&lt;TD CLASS=&quot;navbar&quot; ALIGN=CENTER BGCOLOR=&quot;$TABLECOLOR&quot;&gt;$cell&lt;/TD&gt;\n);
+     }
+     return qq(&lt;TABLE $TABLEATTS&gt;&lt;TR&gt;@cells&lt;/TR&gt;&lt;/TABLE&gt;\n);
+ }
+</PRE>
+
+<P>
+
+<PRE> 
+ 1;
+ __END__
+</PRE>
+
+<P>
+
+<PRE> &lt;Location /&gt;
+   SetHandler  perl-script
+   PerlHandler Apache::NavBar
+   PerlSetVar  NavConf etc/navigation.conf
+ &lt;/Location&gt;
+ 
+-----------------------------------------------------------------------
+</PRE>
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="On_the_Fly_Compression">On-the-Fly Compression
+
+</A></H3>
+WU-FTP has a great feature that automatically gzips a file if you fetch it
+by name with a .gz extension added. Why can't Web servers do that trick?
+With Apache and mod_perl, you can.
+
+
+<P>
+
+Script II.2.4 is a content filter that automatically gzips everything
+retrieved from a particular directory and adds the ``gzip''
+Content-Encoding header to it. Unix versions of Netscape Navigator will
+automatically recognize this encoding type and decompress the file on the
+fly. Windows and Mac versions don't. You'll have to save to disk and
+decompress, or install the WinZip plug-in. Bummer.
+
+
+<P>
+
+The code uses Compress::Zlib module, and has to do a little fancy footwork
+(but not too much) to create the correct gzip header. You can extend this
+idea to do on-the-fly encryption, or whatever you like.
+
+
+<P>
+
+Here's the configuration entry you'll need. Everything in the /compressed
+directory will be compressed automagically.
+
+
+<P>
+
+<PRE> &lt;Location /compressed&gt;
+    SetHandler  perl-script
+    PerlHandler Apache::GZip
+ &lt;/Location&gt;
+</PRE>
+
+<P>
+
+---------------- Script II.2.3: Apache::GZip -------------------------
+
+
+<P>
+
+<PRE> package Apache::GZip;
+ #File: Apache::GZip.pm
+ 
+ use strict vars;
+ use Apache::Constants ':common';
+ use Compress::Zlib;
+ use IO::File;
+ use constant GZIP_MAGIC =&gt; 0x1f8b;
+ use constant OS_MAGIC =&gt; 0x03;
+ 
+ sub handler {
+     my $r = shift;
+     my ($fh,$gz);
+     my $file = $r-&gt;filename;
+     return DECLINED unless $fh=IO::File-&gt;new($file);
+     $r-&gt;header_out('Content-Encoding'=&gt;'gzip');
+     $r-&gt;send_http_header;
+     return OK if $r-&gt;header_only;
+ 
+     tie *STDOUT,'Apache::GZip',$r;
+     print($_) while &lt;$fh&gt;;
+     untie *STDOUT;
+     return OK;
+ }
+ 
+ sub TIEHANDLE {
+     my($class,$r) = @_;
+     # initialize a deflation stream
+     my $d = deflateInit(-WindowBits=&gt;-MAX_WBITS()) || return undef;
+</PRE>
+
+<P>
+
+<PRE>     # gzip header -- don't ask how I found out
+     $r-&gt;print(pack(&quot;nccVcc&quot;,GZIP_MAGIC,Z_DEFLATED,0,time(),0,OS_MAGIC));
+</PRE>
+
+<P>
+
+<PRE>     return bless { r   =&gt; $r,
+                    crc =&gt;  crc32(undef),
+                    d   =&gt; $d,
+                    l   =&gt;  0 
+                    },$class;
+ }
+ 
+ sub PRINT {
+     my $self = shift;
+     foreach (@_) {
+        # deflate the data
+        my $data = $self-&gt;{d}-&gt;deflate($_);
+        $self-&gt;{r}-&gt;print($data);
+        # keep track of its length and crc
+        $self-&gt;{l} += length($_);
+        $self-&gt;{crc} = crc32($_,$self-&gt;{crc});
+     }
+ }
+ 
+ sub DESTROY {
+    my $self = shift;
+</PRE>
+
+<P>
+
+<PRE>    # flush the output buffers
+    my $data = $self-&gt;{d}-&gt;flush;
+    $self-&gt;{r}-&gt;print($data);
+    
+    # print the CRC and the total length (uncompressed)
+    $self-&gt;{r}-&gt;print(pack(&quot;LL&quot;,@{$self}{qw/crc l/}));
+ }
+ 
+ 1;
+</PRE>
+
+<P>
+
+-----------------------------------------------------------------------
+
+
+<P>
+
+By adding a URI translation handler, you can set things up so that a remote
+user can append a .gz to the end of any URL and the file we be delivered in
+compressed form. Script II.2.4 shows the translation handler you need. It
+is called during the initial phases of the request to make any
+modifications to the URL that it wishes. In this case, it removes the .gz
+ending from the filename and arranges for Apache:GZip to be called as the
+content handler. The <CODE>lookup_uri()</CODE> call is used to exclude
+anything that has a special handler already defined (such as CGI scripts),
+and actual gzip files. The module replaces the information in the request
+object with information about the real file (without the .gz), and arranges
+for Apache::GZip to be the content handler for this file.
+
+
+<P>
+
+You just need this one directive to activate handling for all URLs at your
+site:
+
+
+<P>
+
+<PRE> PerlTransHandler Apache::AutoGZip
+</PRE>
+
+<P>
+
+--------------------Script II.2.4: Apache::AutoGZip-----------------
+
+
+<P>
+
+<PRE> package Apache::AutoGZip;
+ 
+ use strict vars;
+ use Apache::Constants qw/:common/;
+ 
+ sub handler {
+     my $r = shift;
+</PRE>
+
+<P>
+
+<PRE>     # don't allow ourselves to be called recursively
+     return DECLINED unless $r-&gt;is_initial_req;
+</PRE>
+
+<P>
+
+<PRE>     # don't do anything for files not ending with .gz
+     my $uri = $r-&gt;uri;
+     return DECLINED unless $uri=~/\.gz$/; 
+     my $basename = $`;
+</PRE>
+
+<P>
+
+<PRE>     # don't do anything special if the file actually exists
+     return DECLINED if -e $r-&gt;lookup_uri($uri)-&gt;filename;
+</PRE>
+
+<P>
+
+<PRE>     # look up information about the file
+     my $subr = $r-&gt;lookup_uri($basename);
+     $r-&gt;uri($basename);
+     $r-&gt;path_info($subr-&gt;path_info);
+     $r-&gt;filename($subr-&gt;filename);
+</PRE>
+
+<P>
+
+<PRE>     # fix the handler to point to Apache::GZip;
+     my $handler = $subr-&gt;handler;
+     unless ($handler) {
+        $r-&gt;handler('perl-script');
+        $r-&gt;push_handlers('PerlHandler','Apache::GZip');
+     } else {
+        $r-&gt;handler($handler);
+     }
+     return OK;
+ }
+ 
+ 1;
+</PRE>
+
+<P>
+
+-----------------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Access_Control">Access Control
+
+</A></H2>
+Access control, as opposed to authentication and authorization, is based on
+something the user ``is'' rather than something he ``knows''. The ``is'' is
+usually something about his browser, such as its IP address, hostname, or
+user agent. Script II.3.1 blocks access to the Web server for certain User
+Agents (you might use this to block impolite robots).
+
+
+<P>
+
+Apache::BlockAgent reads its blocking information from a ``bad agents''
+file, which contains a series of pattern matches. Most of the complexity of
+the code comes from watching this file and recompiling it when it changes.
+If the file doesn't change, it's is only read once and its patterns
+compiled in memory, making this module fast.
+
+
+<P>
+
+Here's an example bad agents file:
+
+
+<P>
+
+<PRE>   ^teleport pro\/1\.28
+   ^nicerspro
+   ^mozilla\/3\.0 \(http engine\)
+   ^netattache
+   ^crescent internet toolpak http ole control v\.1\.0
+   ^go-ahead-got-it
+   ^wget
+   ^devsoft's http component v1\.0
+   ^www\.pl
+   ^digout4uagent
+</PRE>
+
+<P>
+
+A configuration entry to activate this blocker looks like this. In this
+case we're blocking access to the entire site. You could also block access
+to a portion of the site, or have different bad agents files associated
+with different portions of the document tree.
+
+
+<P>
+
+<PRE> &lt;Location /&gt;
+   PerlAccessHandler Apache::BlockAgent
+   PerlSetVar BlockAgentFile /home/www/conf/bad_agents.txt
+ &lt;/Location&gt;
+</PRE>
+
+<P>
+
+------------------Script II.3.1: Apache::BlockAgent-------------------
+
+
+<P>
+
+<PRE> package Apache::BlockAgent;
+ # block browsers that we don't like
+   
+ use strict 'vars';
+ use Apache::Constants ':common';
+ use IO::File;
+ my %MATCH_CACHE;
+ my $DEBUG = 0;
+   
+ sub handler {
+     my $r = shift;
+       
+     return DECLINED unless my $patfile = $r-&gt;dir_config('BlockAgentFile');
+     return FORBIDDEN unless my $agent = $r-&gt;header_in('User-Agent');
+     return SERVER_ERROR unless my $sub = get_match_sub($r,$patfile);
+     return OK if $sub-&gt;($agent);
+     $r-&gt;log_reason(&quot;Access forbidden to agent $agent&quot;,$r-&gt;filename);
+     return FORBIDDEN;
+ }
+   
+ # This routine creates a pattern matching subroutine from a
+ # list of pattern matches stored in a file.
+ sub get_match_sub {
+     my ($r,$filename) = @_;
+     my $mtime = -M $filename;
+   
+     # try to return the sub from cache
+     return $MATCH_CACHE{$filename}-&gt;{'sub'} if
+         $MATCH_CACHE{$filename} &amp;&amp; 
+             $MATCH_CACHE{$filename}-&gt;{'mod'} &lt;= $mtime;
+   
+     # if we get here, then we need to create the sub
+     return undef unless my $fh = new IO::File($filename);
+     chomp(my @pats = &lt;$fh&gt;); # get the patterns into an array
+     my $code = &quot;sub { \$_ = shift;\n&quot;;
+     foreach (@pats) {
+         next if /^#/
+         $code .= &quot;return undef if /$_/i;\n&quot;;
+     }
+     $code .= &quot;1; }\n&quot;;     
+     warn $code if $DEBUG;
+   
+     # create the sub, cache and return it
+     my $sub = eval $code;
+     unless ($sub) {
+         $r-&gt;log_error($r-&gt;uri,&quot;: &quot;,$@);
+         return undef;
+     }
+     @{$MATCH_CACHE{$filename}}{'sub','mod'}=($sub,$modtime);
+     return $MATCH_CACHE{$filename}-&gt;{'sub'};
+ }
+   
+ 1;
+</PRE>
+
+<P>
+
+-----------------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Authentication_and_Authorization">Authentication and Authorization
+
+</A></H2>
+Thought you were stick with authentication using text, DBI and DBM files?
+mod_perl opens the authentication/authorization API wide. The two phases
+are authentication, in which the user has to prove who he or she is
+(usually by providing a username and password), and authorization, in which
+the system decides whether this user has sufficient privileges to view the
+requested URL. A scheme can incorporate authentication and authorization
+either together or singly.
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Authentication_with_NIS">Authentication with NIS
+
+</A></H3>
+If you keep Unix system passwords in /etc/passwd or distribute them by NIS
+(not NIS+) you can authenticate Web users against the system password
+database. (It's not a good idea to do this if the system is connected to
+the Internet because passwords travel in the clear, but it's OK for trusted
+intranets.)
+
+
+<P>
+
+Script II.4.1 shows how the Apache::AuthSystem module fetches the user's
+name and password, compares it to the system password, and takes
+appropriate action. The <CODE>getpwnam()</CODE> function operates either on
+local files or on the NIS database, depending on how the server host is
+configured. WARNING: the module will fail if you use a shadow password
+system, since the Web server doesn't have root privileges.
+
+
+<P>
+
+In order to activate this system, put a configuration directive like this
+one in access.conf:
+
+
+<P>
+
+<PRE> &lt;Location /protected&gt;
+   AuthName Test
+   AuthType Basic
+   PerlAuthenHandler Apache::AuthSystem;
+   require valid-user
+ &lt;/Location&gt;
+</PRE>
+
+<P>
+
+--------------------Script II.4.1: Apache::AuthSystem-----------------
+
+
+<P>
+
+<PRE> package Apache::AuthSystem;
+ # authenticate users on system password database
+</PRE>
+
+<P>
+
+<PRE> use strict;
+ use Apache::Constants ':common';
+</PRE>
+
+<P>
+
+<PRE> sub handler {
+    my $r = shift;
+</PRE>
+
+<P>
+
+<PRE>    my($res, $sent_pwd) = $r-&gt;get_basic_auth_pw;
+    return $res if $res != OK;
+    
+    my $user = $r-&gt;connection-&gt;user;
+    my $reason = &quot;&quot;;
+</PRE>
+
+<P>
+
+<PRE>    my($name,$passwd) = getpwnam($user);
+    if (!$name) {
+        $reason = &quot;user does not have an account on this system&quot;;
+    } else {
+        $reason = &quot;user did not provide correct password&quot;
+            unless $passwd eq crypt($sent_pwd,$passwd);
+    }
+</PRE>
+
+<P>
+
+<PRE>    if($reason) {
+        $r-&gt;note_basic_auth_failure;
+        $r-&gt;log_reason($reason,$r-&gt;filename);
+        return AUTH_REQUIRED;
+    }
+</PRE>
+
+<P>
+
+<PRE>    return OK;
+ }
+</PRE>
+
+<P>
+
+<PRE> 1;
+</PRE>
+
+<P>
+
+-----------------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Anonymous_Authentication">Anonymous Authentication
+
+</A></H3>
+Here's a system that authenticates users the way anonymous FTP does. They
+have to enter a name like ``Anonymous'' (configurable) and a password that
+looks like a valid e-mail address. The system rejects the username and
+password unless they are formatted correctly.  
+
+
+<P>
+
+In a real application, you'd probably want to log the password somewhere
+for posterity. Script II.4.2 shows the code for Apache::AuthAnon. To
+activate it, create a access.conf section like this one:
+
+
+<P>
+
+<PRE> &lt;Location /protected&gt;
+ AuthName Anonymous
+ AuthType Basic
+ PerlAuthenHandler Apache::AuthAnon
+ require valid-user
+</PRE>
+
+<P>
+
+<PRE> PerlSetVar Anonymous anonymous|anybody
+ &lt;/Location&gt;
+</PRE>
+
+<P>
+
+---------------Script II.4.2: Anonymous Authentication-----------------
+
+
+<P>
+
+<PRE> package Apache::AuthAnon;
+</PRE>
+
+<P>
+
+<PRE> use strict;
+ use Apache::Constants ':common';
+</PRE>
+
+<P>
+
+<PRE> my $email_pat = '\w+\@\w+\.\w+';
+ my $anon_id  = &quot;anonymous&quot;;
+</PRE>
+
+<P>
+
+<PRE> sub handler {
+     my $r = shift;
+</PRE>
+
+<P>
+
+<PRE>     my($res, $sent_pwd) = $r-&gt;get_basic_auth_pw;
+     return $res if $res != OK;
+</PRE>
+
+<P>
+
+<PRE>     my $user = lc $r-&gt;connection-&gt;user;
+     my $reason = &quot;&quot;;
+</PRE>
+
+<P>
+
+<PRE>     my $check_id = $r-&gt;dir_config(&quot;Anonymous&quot;) || $anon_id;
+</PRE>
+
+<P>
+
+<PRE>     unless($user =~ /^$check_id$/i) {
+         $reason = &quot;user did not enter a valid anonymous username&quot;;
+     }
+</PRE>
+
+<P>
+
+<PRE>     unless($sent_pwd =~ /$email_pat/o) {
+         $reason = &quot;user did not enter an email address password&quot;;
+     } 
+</PRE>
+
+<P>
+
+<PRE>     if($reason) {
+         $r-&gt;note_basic_auth_failure;
+         $r-&gt;log_reason($reason,$r-&gt;filename);
+         return AUTH_REQUIRED;
+     }
+</PRE>
+
+<P>
+
+<PRE>     $r-&gt;notes(AuthAnonPassword =&gt; $sent_pwd);
+</PRE>
+
+<P>
+
+<PRE>     return OK;
+ }
+</PRE>
+
+<P>
+
+<PRE> 1;
+</PRE>
+
+<P>
+
+-----------------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Gender_Based_Authorization">Gender-Based Authorization
+
+</A></H3>
+After authenticating, you can authorize. The most familiar type of
+authorization checks a group database to see if the user belongs to one or
+more privileged groups. But authorization can be anything you dream up.
+
+
+<P>
+
+Script II.4.3 shows how you can authorize users by their gender (or at
+least their <EM>apparent</EM> gender, by checking their names with Jon Orwant's Text::GenderFromName
+module. This must be used in conjunction with an authentication module,
+such as one of the standard Apache modules or a custom one.
+
+
+<P>
+
+This configuration restricts access to users with feminine names, except
+for the users ``Webmaster'' and ``Jeff'', who are allowed access.
+
+
+<P>
+
+<PRE> &lt;Location /ladies_only&gt;
+   AuthName &quot;Ladies Only&quot;
+   AuthType Basic
+   AuthUserFile /home/www/conf/users.passwd
+   PerlAuthzHandler  Apache::AuthzGender
+   require gender F            # allow females
+   require user Webmaster Jeff # allow Webmaster or Jeff
+ &lt;/Location&gt;
+</PRE>
+
+<P>
+
+The script uses a custom error response to explain why the user was denied
+admittance. This is better than the standard ``Authorization Failed''
+message.
+
+
+<P>
+
+------------------Script II.4.3: Apache::AuthzGender---------------
+
+
+<P>
+
+<PRE> package Apache::AuthzGender;
+</PRE>
+
+<P>
+
+<PRE> use strict;
+ use Text::GenderFromName;
+ use Apache::Constants &quot;:common&quot;;
+</PRE>
+
+<P>
+
+<PRE> my %G=('M'=&gt;&quot;male&quot;,'F'=&gt;&quot;female&quot;);
+</PRE>
+
+<P>
+
+<PRE> sub handler {
+     my $r = shift;
+    
+     return DECLINED unless my $requires = $r-&gt;requires;
+     my $user = lc($r-&gt;connection-&gt;user);
+     substr($user,0,1)=~tr/a-z/A-Z/;
+     my $guessed_gender = uc(gender($user)) || 'M';
+</PRE>
+
+<P>
+
+<PRE>     my $explanation = &lt;&lt;END;
+ &lt;HTML&gt;&lt;HEAD&gt;&lt;TITLE&gt;Unauthorized&lt;/TITLE&gt;&lt;/HEAD&gt;&lt;BODY&gt;
+ &lt;H1&gt;You Are Not Authorized to Access This Page&lt;/H1&gt;
+ Access to this page is limited to:
+ &lt;OL&gt;
+ END
+</PRE>
+
+<P>
+
+<PRE>     foreach (@$requires) {
+         my ($requirement,@rest ) = split(/\s+/,$_-&gt;{requirement});
+         if (lc $requirement eq 'user') {
+             foreach (@rest) { return OK if $user eq $_; }
+             $explanation .= &quot;&lt;LI&gt;Users @rest.\n&quot;;
+         } elsif (lc $requirement eq 'gender') {
+             foreach (@rest) { return OK if $guessed_gender eq uc $_; }
+             $explanation .= &quot;&lt;LI&gt;People of the @G{@rest} persuasion.\n&quot;;
+         } elsif (lc $requirement eq 'valid-user') {
+             return OK;
+         }
+     }
+</PRE>
+
+<P>
+
+<PRE>     $explanation .= &quot;&lt;/OL&gt;&lt;/BODY&gt;&lt;/HTML&gt;&quot;;
+    
+     $r-&gt;custom_response(AUTH_REQUIRED,$explanation);
+     $r-&gt;note_basic_auth_failure;
+     $r-&gt;log_reason(&quot;user $user: not authorized&quot;,$r-&gt;filename);
+     return AUTH_REQUIRED;
+ }
+</PRE>
+
+<P>
+
+<PRE> 1;
+</PRE>
+
+<P>
+
+--------------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Proxy_Services">Proxy Services
+
+</A></H2>
+mod_perl gives you access to Apache's ability to act as a Web proxy. You
+can intervene at any step in the proxy transaction to modify the outgoing
+request (for example, stripping off headers in order to create an
+anonymizing proxy) or to modify the returned page.
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="A_Banner_Ad_Blocker">A Banner Ad Blocker
+
+</A></H3>
+Script II.5.1 shows the code for a banner-ad blocker written by Doug
+MacEachern. It intercepts all proxy requests, substituting its own content
+handler for the default. The content handler uses the LWP library to fetch
+the requested document. If the retrieved document is an image, and its URL
+matches the pattern (ads?|advertisement|banner), then the content of the
+image is replaced with a dynamically-generated GIF that reads ``Blocked
+Ad''. The generated image is exactly the same size as the original,
+preserving the page layout. Notice how the outgoing headers from the Apache
+request object are copied to the LWP request, and how the incoming LWP
+response headers are copied back to Apache. This makes the transaction
+nearly transparent to Apache and to the remote server.
+
+
+<P>
+
+In addition to LWP you'll need GD.pm and Image::Size to run this module. To
+activate it, add the following line to the configuration file:
+
+
+<P>
+
+<PRE> PerlTransHandler Apache::AdBlocker
+</PRE>
+
+<P>
+
+Then configure your browser to use the server to proxy all its HTTP
+requests. Works like a charm! With a little more work, and some help from
+the ImageMagick module, you could adapt this module to quiet-down animated
+GIFs by stripping them of all but the very first frame.
+
+
+<P>
+
+---------------Script II.5.1: Apache::AdBlocker---------------------
+
+
+<P>
+
+<PRE> package Apache::AdBlocker;
+ 
+ use strict;
+ use vars qw(@ISA $VERSION);
+ use Apache::Constants qw(:common);
+ use GD ();
+ use Image::Size qw(imgsize);
+ use LWP::UserAgent ();
+ 
+ @ISA = qw(LWP::UserAgent);
+ $VERSION = '1.00';
+ 
+ my $UA = __PACKAGE__-&gt;new;
+ $UA-&gt;agent(join &quot;/&quot;, __PACKAGE__, $VERSION);
+ 
+ my $Ad = join &quot;|&quot;, qw{ads? advertisement banner};
+ 
+ sub handler {
+     my($r) = @_;
+     return DECLINED unless $r-&gt;proxyreq;
+     $r-&gt;handler(&quot;perl-script&quot;); #ok, let's do it
+     $r-&gt;push_handlers(PerlHandler =&gt; \&amp;proxy_handler);
+     return OK;
+ }
+ 
+ sub proxy_handler {
+     my($r) = @_;
+ 
+     my $request = <A HREF="HTTP::Request-&gt">HTTP::Request-&gt</A>;new($r-&gt;method, $r-&gt;uri);
+     
+     $r-&gt;headers_in-&gt;do(sub { 
+        $request-&gt;header(@_); 
+     });
+ 
+     # copy POST data, if any
+     if($r-&gt;method eq 'POST') {
+        my $len = $r-&gt;header_in('Content-length');
+        my $buf;
+        $r-&gt;read($buf, $len);
+        $request-&gt;content($buf);
+        $request-&gt;content_type($r-&gt;content_type);
+     }
+ 
+     my $response = $UA-&gt;request($request);
+     $r-&gt;content_type($response-&gt;header('Content-type'));
+ 
+     #feed response back into our request_rec*
+     $r-&gt;status($response-&gt;code);
+     $r-&gt;status_line(join &quot; &quot;, $response-&gt;code, $response-&gt;message);
+     $response-&gt;scan(sub {
+        $r-&gt;header_out(@_);
+     });
+ 
+     if ($r-&gt;header_only) {
+        $r-&gt;send_http_header();
+        return OK;
+     }
+ 
+     my $content = \$response-&gt;content;
+     if($r-&gt;content_type =~ /^image/ and $r-&gt;uri =~ /\b($Ad)\b/i) {
+        block_ad($content);
+        $r-&gt;content_type(&quot;image/gif&quot;);
+     }
+ 
+     $r-&gt;content_type('text/html') unless $$content;
+     $r-&gt;send_http_header;
+     $r-&gt;print($$content || $response-&gt;error_as_HTML);
+ 
+     return OK;
+ }
+ 
+ sub block_ad {
+     my $data = shift;
+     my($x, $y) = imgsize($data);
+ 
+     my $im = GD::Image-&gt;new($x,$y);
+ 
+     my $white = $im-&gt;colorAllocate(255,255,255);
+     my $black = $im-&gt;colorAllocate(0,0,0);       
+     my $red = $im-&gt;colorAllocate(255,0,0);      
+ 
+     $im-&gt;transparent($white);
+     $im-&gt;string(GD::gdLargeFont(),5,5,&quot;Blocked Ad&quot;,$red);
+     $im-&gt;rectangle(0,0,$x-1,$y-1,$black);
+ 
+     $$data = $im-&gt;gif;
+ }
+  
+ 1;
+</PRE>
+
+<P>
+
+--------------------------------------------------------------------
+
+
+<P>
+
+Another way of doing this module would be to scan all proxied HTML files
+for &lt;IMG&gt; tags containing one of the verboten URLs, then replacing
+the SRC attribute with a transparent GIF of our own. However, unless the
+&lt;IMG&gt; tag contained WIDTH and HEIGHT attributes, we wouldn't be able
+to return a GIF of the correct size -- unless we were to go hunting for the
+GIF with LWP, in which case we might as well do it this way.
+
+
+<P>
+
+<P>
+<HR>
+<H2><A NAME="Customized_Logging">Customized Logging
+
+</A></H2>
+After Apache handles a transaction, it passes all the information about the
+transaction to the log handler. The default log handler writes out lines to
+the log file. With mod_perl, you can install your own log handler to do
+customized logging.
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Send_E_Mail_When_a_Particular_Pa">Send E-Mail When a Particular Page Gets Hit
+
+</A></H3>
+Script II.6.1 installs a log handler which watches over a page or set of
+pages. When someone fetches a watched page, the log handler sends off an
+e-mail to notify someone (probably the owner of the page) that the page has
+been read.
+
+
+<P>
+
+To activate the module, just attach a PerlLogHandler to the
+&lt;Location&gt; or &lt;File&gt; you wish to watch. For example:
+
+
+<P>
+
+<PRE>   &lt;Location /~lstein&gt;
+      PerlLogHandler Apache::LogMail
+      PerlSetVar mailto lstein@cshl.org
+   &lt;/Location&gt;
+</PRE>
+
+<P>
+
+The ``mailto'' directive specifies the name of the
+<CODE>recipient(s)</CODE> to notify.
+
+
+<P>
+
+-------------------Script II.6.1: Apache::LogMail------------------
+
+
+<P>
+
+<PRE> package Apache::LogMail;
+ use Apache::Constants ':common';
+</PRE>
+
+<P>
+
+<PRE> sub handler {
+     my $r = shift;
+     my $mailto = $r-&gt;dir_config('mailto');
+     return DECLINED unless $mailto
+     my $request = $r-&gt;the_request;
+     my $uri = $r-&gt;uri;
+     my $agent = $r-&gt;header_in(&quot;User-agent&quot;);
+     my $bytes = $r-&gt;bytes_sent;
+     my $remote = $r-&gt;get_remote_host;
+     my $status = $r-&gt;status_line;
+     my $date = localtime;
+     unless (open (MAIL,&quot;|/usr/lib/sendmail -oi -t&quot;)) {
+        $r-&gt;log_error(&quot;Couldn't open mail: $!&quot;);
+        return DECLINED;
+     }
+     print MAIL &lt;&lt;END;
+ To: $mailto
+ From: Mod Perl &lt;webmaster&gt;
+ Subject: Somebody looked at $uri
+</PRE>
+
+<P>
+
+<PRE> At $date, a user at $remote looked at
+ $uri using the $agent browser.  
+</PRE>
+
+<P>
+
+<PRE> The request was $request, 
+ which resulted returned a code of $status.  
+</PRE>
+
+<P>
+
+<PRE> $bytes bytes were transferred.
+ END
+     close MAIL;
+     return OK;
+ }
+ 1;
+</PRE>
+
+<P>
+
+--------------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H3><A NAME="Writing_Log_Information_Into_a_R">Writing Log Information Into a Relational Database
+
+</A></H3>
+Coming full circle, Script II.6.2 shows a module that writes log
+information into a DBI database. The idea is similar to Script I.1.9, but
+there's now no need to open a pipe to an external process. It's also a
+little more efficient, because the log data fields can be recovered
+directly from the Apache request object, rather than parsed out of a line
+of text. Another improvement is that we can set up the Apache configuration
+files so that only accesses to certain directories are logged in this way.
+
+
+<P>
+
+To activate, add something like this to your configuration file:
+PerlLogHandler Apache::LogDBI
+
+
+<P>
+
+Or, to restrict special logging to accesses of files in below the URL
+``/lincoln_logs'' add this:
+
+
+<P>
+
+<PRE> &lt;Location /lincoln_logs&gt;
+   PerlLogHandler Apache::LogDBI  
+ &lt;/Location&gt;
+</PRE>
+
+<P>
+
+-----------------Script II.6.2: Apache::LogDBI---------------------
+
+
+<P>
+
+<PRE> package Apache::LogDBI;
+ use Apache::Constants ':common';
+ 
+ use strict 'vars';
+ use vars qw($DB $STH);
+ use DBI;
+ use POSIX 'strftime';
+ 
+ use constant DSN       =&gt; 'dbi:mysql:www';
+ use constant DB_TABLE  =&gt; 'access_log';
+ use constant DB_USER   =&gt; 'nobody';
+ use constant DB_PASSWD =&gt; '';
+ 
+ $DB = DBI-&gt;connect(DSN,DB_USER,DB_PASSWD) || die DBI-&gt;errstr;
+ $STH = $DB-&gt;prepare(&quot;INSERT INTO ${\DB_TABLE} VALUES(?,?,?,?,?,?,?,?,?)&quot;) 
+      || die $DB-&gt;errstr;
+ 
+ sub handler {
+     my $r = shift;
+     my $date    = strftime('%Y-%m-%d %H:%M:%S',localtime);
+     my $host    = $r-&gt;get_remote_host;
+     my $method  = $r-&gt;method;
+     my $url     = $r-&gt;uri;
+     my $user    = $r-&gt;connection-&gt;user;
+     my $referer = $r-&gt;header_in('Referer');
+     my $browser = $r-&gt;header_in(&quot;User-agent&quot;);
+     my $status  = $r-&gt;status;
+     my $bytes   = $r-&gt;bytes_sent;
+     $STH-&gt;execute($date,$host,$method,$url,$user,
+                   $browser,$referer,$status,$bytes);
+     return OK;
+ }
+ 
+ 1;
+</PRE>
+
+<P>
+
+--------------------------------------------------------------------
+
+
+<P>
+
+<P>
+<HR>
+<H1><A NAME="Conclusion">Conclusion
+
+</A></H1>
+That's as many tricks as I thought could squeeze into a three-hour session.
+Even so, we probably didn't have time to cover them all. You'll find more
+tricks in my books, articles and Web site. Here's where you can find them:
+
+
+<P>
+
+<DL>
+<DT><STRONG><A NAME="item__How">"How to Set Up and Maintain a Web Site"
+
+</A></STRONG><DD>
+General introduction to Web site care and feeding, with an emphasis on
+Apache. Addison-Wesley 1997.
+
+
+<P>
+
+Companion Web site at <A
+HREF="http://www.genome.wi.mit.edu/WWW/">http://www.genome.wi.mit.edu/WWW/</A>
+
+
+
+<P>
+
+<DT><STRONG><A NAME="item__Web">"Web Security, a Step-by-Step Reference Guide"
+
+</A></STRONG><DD>
+How to keep your Web site free from thieves, vandals, hooligans and other
+yahoos. Addison-Wesley 1998.
+
+
+<P>
+
+Companion Web site at <A
+HREF="http://www.w3.org/Security/Faq/">http://www.w3.org/Security/Faq/</A>
+
+
+<P>
+
+<DT><STRONG><A NAME="item__The">"The Official Guide to Programming with CGI.pm"
+
+</A></STRONG><DD>
+Everything I know about CGI.pm (and some things I don't!). John Wiley &amp;
+Sons, 1998.
+
+
+<P>
+
+Companion Web site at <A
+HREF="http://www.wiley.com/compbooks/stein/">http://www.wiley.com/compbooks/stein/</A>
+
+
+
+<P>
+
+<DT><STRONG><A NAME="item__Writing">"Writing Apache Modules in Perl and C"
+
+</A></STRONG><DD>
+Co-authored with Doug MacEachern. O'Reilly &amp; Associates.
+
+
+<P>
+
+Companion Web site at <A
+HREF="http://www.modperl.com/">http://www.modperl.com/</A>
+
+
+<P>
+
+<DT><STRONG><A NAME="item_WebTechniques">WebTechniques Columns
+
+</A></STRONG><DD>
+I write a monthly column for WebTechniques magazine. You can find
+back-issues and reprints at <A
+HREF="http://www.web-techniques.com/">http://www.web-techniques.com/</A>
+
+
+<P>
+
+<DT><STRONG><A NAME="item_The">The Perl Journal Columns
+
+</A></STRONG><DD>
+I write a quarterly column for TPJ. Source code listings are available at
+<A HREF="http://www.tpj.com/">http://www.tpj.com/</A>
+
+
+<P>
+
+</DL>
+</DL>
+<hr>
+<a href="../index.html">Perl Conference Tutorial Pages</a>
+    </BODY>
+
+    </HTML>

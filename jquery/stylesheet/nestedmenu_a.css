@@ -1,0 +1,39 @@
+* 									{ margin: 0; padding: 0; }
+#page-wrap							{position:absolute; top: 0px; left: 0px; width: 800px; margin: 0px auto; z-index: 20; } 
+
+/* 
+	LEVEL ONE
+*/
+.mnuli { margin-left: 0em; }   /* we do not want to takeover the li tag */
+
+ul.dropdown                         { position: relative; list-style: none; }
+ul.dropdown .mnuli                      { font-weight: bold; float: left; zoom: 1; background: #009; }
+ul.dropdown a:hover		              { color: #FFF; }
+ul.dropdown a:active                { color: #FFF; }
+ul.dropdown .mnuli a                    { display: block; padding: 4px 8px; border-right: 1px solid #FFF;
+	 								                    color: #FFF; text-decoration: none; }
+ul.dropdown .mnuli:last-child a         { border-right: none; } /* Doesn't work in IE */
+ul.dropdown .mnuli.hover,
+                                              /* hover color */
+ul.dropdown .mnuli:hover                { background: #3333AD; position: relative; }
+ul.dropdown .mnuli.hover a              { color: #FFF; }
+
+
+/* 
+	LEVEL TWO
+*/
+ul.dropdown ul 						{ width: 220px; visibility: hidden; position: absolute; top: 100%; left: 0; 
+	                          list-style: none;}
+                                                        /* nested bg color */
+ul.dropdown ul .mnuli 					{ font-weight: normal; background: #4D4DB8; color: #000; 
+									            border-bottom: 1px solid #009; float: none; }
+									  
+                                    /* IE 6 & 7 Needs Inline Block */
+ul.dropdown ul .mnuli a					{ border-right: none; width: 100%; display: inline-block; } 
+
+/* 
+	LEVEL THREE
+*/
+ul.dropdown ul ul 					    { left: 100%; top: 0; 
+	                                list-style: none;}
+ul.dropdown .mnuli:hover > ul 			{ visibility: visible; }

@@ -1,0 +1,65 @@
+body {
+font-size:10pt;
+}
+input.advanced {
+font-size:9pt;
+width:.75cm;
+padding:0;
+margin:0;
+}
+input.clear, input.number, input.operand, input.equal, input.other {
+font-size:15pt;
+}
+input.clear, input.number, input.operand, input.equal, input.other {
+width:1cm;
+font-weight:bold;
+padding:2px;
+}
+input.keyshortcut {
+background-color:beige;
+color:beige;
+text-decoration:none;
+border:none;
+}
+input.clear {
+background-color:#aa2222;
+border-color:#aa2222;
+color:white;
+}
+input.number {
+background-color:#CCaa99;
+border-color:#CCaa99;
+color:black;
+}
+input.operand {
+background-color:#aaaacc;
+border-color:#aaaacc;
+color:black;
+}
+input.equal {
+background-color:#444444;
+border-color:#444444;
+color:white;
+}
+input.other {
+background-color:#9ac693;
+border-color:#9ac693;
+color:black;
+}
+input.advanced {
+background-color:lightgray;
+border-color:lightgray;
+color:black;
+}
+input.line {
+background-color:#cccc99;
+border-color:#cccc99;
+font-size:15pt;
+font-weight:bold;
+width:100%;
+}
+select {
+background-color:#cccccc;
+border-color:#cccccc;
+color:black;
+}

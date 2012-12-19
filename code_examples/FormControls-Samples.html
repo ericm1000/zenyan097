@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Form Generator Proto - Form Mockup</title>
+<link rel="stylesheet" href="../stylesheet/eform.css">
+<link rel="stylesheet" href="../stylesheet/mncontent.css">
+<style type="text/css">
+<!--
+body {
+	   font-family: Arial, Helvetica, sans-serif;
+}
+
+-->
+</style>
+</head>
+
+<body>
+
+<form id="form1" name="form1" method="post" action="FormControls-Sample.html">
+
+<h2>Pulldown Listboxes</h2>
+<label>Pulldown Listbox
+<select name="f1Pd1" type="text" id="f1Pd1">
+	 <option value="WA"></option>
+	 <option value="WA">WA</option>
+   <option value="WY">WY</option>
+   <option value="IL">IL</option>
+   <option value="CA">CA</option>
+   <option value="OR">OR</option>
+</select>
+</label>
+<br /><br />
+<p class="labelbefore"  id="f1Pd2">Pulldown - Label on own row above</p>
+<select name="f1Pd2" type="text" id="f1Pd2">
+	 <option value="WA"></option>
+	 <option value="WA">WA</option>
+   <option value="WY">WY</option>
+   <option value="IL">IL</option>
+   <option value="CA">CA</option>
+   <option value="OR">OR</option>
+</select>
+
+<br /><br />
+<h2>Lisboxes</h2>
+<p class="labelbefore"  id="f1Lb1">Listbox Multiple Selection</p>
+<select id="f1Lb1[]" name="f1Lb1[]" multiple="multiple"  size="4">
+   <option value="Miller">Miller</option>
+   <option value="Budweiser">Bud</option>
+   <option value="Corona">Corona</option>
+   <option value="Fat Tire">Fat Tire</option>
+</select>
+
+<p class="labelbefore"  id="f1Lb2">Listbox Single Selection</p>
+<select name="f1Lb2" size="4">
+   <option value="WA" selected="selected">WA</option>
+   <option value="WY">WY</option>
+   <option value="IL">IL</option>
+   <option value="CA">CA</option>
+</select> 
+
+<br /><br />
+<h2>Single Textbox on Row</h2>
+<label>Text Box 1<input name="f1Tb1" type="text" id="f1Tb1" size="25" maxlength="25" /></label>
+
+<br /><br />
+<h2>Multiple Textboxes on Row</h2>
+<label>Text Box 2<input name="f1Tb2" type="text" id="f1Tb2" size="20" maxlength="20" /></label>
+<label>Text Box 3<input name="f1Tb3" type="text" id="f1Tb3" size="20" maxlength="20" /></label>
+<label>Text Box 1<input name="f1Tb4" type="text" id="f1Tb4" size="40" maxlength="40" /></label>
+
+<br /><br />
+<h2>Multiple Radios on Row</h2>
+<p class="labelbefore"  id="f1CR1Lbl">Pre radio row description</p>
+<label>Radio Button #1<input name="f1Rb1" type="radio" id="f1Rb1a" /></label>
+<label>Radio Button #2<input name="f1Rb1" type="radio" id="f1Rb1b" /></label>
+<label>Radio Button #3<input name="f1Rb1" type="radio" id="f1Rb1c" /></label>
+<label>Radio Button #4<input name="f1Rb1" type="radio" id="f1Rb1d" /></label>
+<label>Radio Button #5<input name="f1Rb1" type="radio" id="f1Rb1e" /></label>
+
+<br /><br />
+<h2>Multiple Checkboxes on Row</h2>
+<p class="labelbefore" id="f1Cb1Lbl">Pre checkbox description</p>
+<label>Check Box #1<input name="f1Cb1" type="checkbox" id="f1Cb1a" /></label>
+<label>Check Box #2<input name="f1Cb1" type="checkbox" id="f1Cb1b" /></label>
+<label>Check Box #3<input name="f1Cb1" type="checkbox" id="f1Cb1c" /></label>
+<label>Check Box #4<input name="f1Cb1" type="checkbox" id="f1Cb1d" /></label>
+<label>Check Box #5<input name="f1Cb1" type="checkbox" id="f1Cb1e" /></label>
+
+<br /><br />
+<h2>Textarea 80x5</h2>
+<p class="labelbefore" id="f1Ta1Lbl">Text area 80 cols by 5 rows.</p>
+<textarea cols="80" rows="5" name="f1Ta1" id="f1Ta1"></textarea>
+
+</form>
+</body>
+</html>

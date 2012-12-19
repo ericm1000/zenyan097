@@ -1,0 +1,45 @@
+img {
+border: none; 
+}
+
+.curl {
+font-family: courier new, courier; 
+text-align: left; 
+font-size: 100%;
+font-weight: normal; 
+}	
+
+.container {
+        width: 700px;
+        padding: 5px;
+        margin: 3px 0 20px 0;
+}
+
+
+#navPyra {
+        margin: 0;
+        padding: 0 0 20px 10px;
+        border-bottom: 1px solid #9FB1BC;
+}
+
+#navPyra li {
+        margin: 0;
+        padding: 0;
+        display: inline;
+        list-style-type: none;
+}
+
+#navPyra a:link, #navPyra a:visited {
+        float: left;
+        font-size: 14px;
+        line-height: 14px;
+        font-weight: bold;
+        padding: 0 12px 6px 12px;
+        text-decoration: none;
+        color: #708491;
+}
+
+#navPyra a:link.active, #navPyra a:visited.active, #navPyra a:hover {
+        color: #000;
+        background: url(images/pyramid.gif) no-repeat bottom center;
+}

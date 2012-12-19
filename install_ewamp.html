@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- ********************************************************************* -->
+<!-- Title -->
+	<title>eWAMP - No Install WAMP Webserver</title>
+<!-- ********************************************************************* -->
+<!-- end -->
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!-- ********************************************************************* -->
+<!-- Meta -->
+	<meta name="description" content="WAMP Webserver">
+	<meta name="keywords" content="WAMP,WAMP stack,apache,php,perl,mysql">
+<!-- ********************************************************************* -->
+<!-- end -->
+	<meta name="robots" content="index, follow">
+
+    <link rel="stylesheet" href="stylesheet/mncontent.css">	
+    <style type="text/css">
+<!--
+#mncontent {
+	position:absolute;
+	width:573px;
+	height:456px;
+	z-index:10;
+	left: 29px;
+	top: 12px;
+}
+#pgtitle {
+	position:absolute;
+	width:278px;
+	height:30px;
+	z-index:2;
+	left: 171px;
+	top: 29px;
+}
+#pgicon {
+	position:absolute;
+	width:63px;
+	height:50px;
+	z-index:1;
+	left: 39px;
+	top: 8px;
+}
+#pgquote {
+	position:absolute;
+	width:280px;
+	height:54px;
+	z-index:4;
+	left: 520px;
+	top: 10px;
+}
+#adsv1 {
+	position:absolute;
+	width:160px;
+	height:600px;
+	z-index:5;
+	left: 764px;
+	top: 79px;
+}
+#Layer1 {
+	position:absolute;
+	width:34px;
+	height:32px;
+	z-index:110;
+	left: 659px;
+	top: 85px;
+}
+#Layer2 {
+	position:absolute;
+	width:523px;
+	height:41px;
+	z-index:12;
+	left: 196px;
+	top: 79px;
+}
+#Layer3 {
+	position:absolute;
+	width:78px;
+	height:36px;
+	z-index:13;
+	left: 242px;
+	top: 99px;
+}
+#Layer4 {
+	position:absolute;
+	width:114px;
+	height:38px;
+	z-index:14;
+	left: 343px;
+	top: 99px;
+}
+#Layer5 {
+	position:absolute;
+	width:131px;
+	height:37px;
+	z-index:15;
+	left: 480px;
+	top: 100px;
+}
+
+-->
+    </style>
+</head>
+<body>
+<div id="mncontent">
+  <h3>Installing eWAMP </h3>
+  <ol>
+  <li>Under your root drive (C, D, etc...) create a directory named &quot;webroot&quot;</li>
+  <li>Copy the file &quot;eWamp096_32.zip&quot; to the webroot directory and unzip it there.</li>
+ </ol>
+<p>If you are installing to a drive other than C: perform steps 3 and 4. If you are installing to the C drive proceed to step 5. </p>
+<ol start="3">
+  <li>Open the file \webroot\mysql\my.ini and modify the drive reference lines 74 and 77 from "c" to whatever the drive you unipped to.</li>
+  <li>Open the file \webroot\sc.bat and modify the drive references from "c" to whatever the drive you unipped to.</li>
+</ol>
+
+<ol start="5">
+  <li>Open the command prompt (you will likely need to open the command prompt as the  administrator in order to add services), change directory to \webroot and run the batch file sc.bat. This will install the apache and the mysql services.</li>
+</ol>
+<h3>Post Installation eWAMP Testing </h3>
+<ol>
+  <li>Open you browser and check out the following urls</li>
+     <ol>
+	     <li>Test Apache: http://localhost</li>
+		 <li>Test Php: http://localhost/test.php</li>
+		 <li>Test CGI: http://localhost/cgi-bin/printenv.cgi</li>
+	 </ol>
+</ol>
+
+</div>
+
+</body>
+</html>

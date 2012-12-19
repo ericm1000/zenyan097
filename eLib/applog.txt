@@ -1,0 +1,22 @@
+
+2009-05-28 11:05:22|refpg:http://10.8.160.170/dbarc/logon.php
+form login:  db login: 19
+form pwd: OBY db pwd: OBY
+2009-05-28 11:05:54|refpg:http://10.8.160.170/dbarc/logon.php
+form login: 19 db login: 19
+form pwd: OBY db pwd: OBY
+2009-05-28 11:05:45|refpg:http://10.8.160.170/dbarc/logon.php
+form login: 19 db login: 19
+form pwd: OBY db pwd: OBY
+2009-05-28 11:05:56|refpg:http://10.8.160.170/dbarc/logon.php
+form login: 19 db login: 19
+form pwd:  db pwd: 
+2009-05-28 11:05:04|refpg:http://10.8.160.170/dbarc/logon.php
+form login: 19 db login: 19
+form pwd: OBY db pwd: OBY
+2009-05-28 02:05:24|refpg:http://10.8.160.170/dbarc/logon.php
+form login: 35 db login: 35
+form pwd: PATSY db pwd: PATSY
+2009-05-28 03:05:08|refpg:http://10.8.160.170/dbarc/logon.php
+form login: 19 db login: 19
+form pwd: OBY db pwd: OBY

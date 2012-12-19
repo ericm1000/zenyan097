@@ -1,0 +1,58 @@
+	body {
+	margin:0;
+	padding:0;
+	border:0;			/* This removes the border around the viewport in old versions of IE */
+	width:100%;
+	background:#fff;
+	min-width:600px;		/* Minimum width of layout - remove line if not required */
+	/* The min-width property does not work in old versions of Internet Explorer */
+		font-size:90%;
+	background-color: #F6F6F2;
+	}
+
+/* TYPOGRAPHY */
+p, ul, ol {margin: 0 0 1.5em; 
+	         font-family: arial,verdana,sans-serif;}
+li {margin-left: 3em; }	         
+h1, h2, h3, h4, h5     {letter-spacing: -1px;
+	                      font-family: arial,verdana,sans-serif;
+	                      margin: 1.2em 0 .3em;
+	                      color:#000;
+	                      padding-bottom: .1em;}
+	                      
+h1 {font-size: 1.3em; margin-top:.6em}
+.h1hdr { margin-left: 10px; }
+h2 {font-size: 1.2em; color: #0000CC;}
+h3 {font-size: 1.1em;}
+h4 {font-size: 1.05em;}
+h5 {font-size: 1em;}
+h6 {letter-spacing: -1px;
+	  font-family: arial,verdana,sans-serif;
+    font-size: 1em;
+    font-weight: normal;
+	  margin: 0em 0 0em;
+	  color:#000;
+	  padding-bottom: .1em;
+}
+p {font-size: 1.0em;}
+
+
+a {
+font-family: arial;	
+text-decoration: none;
+color: #996699; 
+}
+ 
+a:link { color: blue; } 
+a:visited { color: blue; } 
+a:active { color:blue; } 
+a:hover { text-decoration: none;  
+          color: blue; 
+          font-weight: bold;
+} 
+	
+img {
+border: none; 
+}
+
+

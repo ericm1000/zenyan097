@@ -1,0 +1,1 @@
+This directory contains schema and startset data for the SQL Server version of the elixir database.

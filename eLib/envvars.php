@@ -1,4 +1,5 @@
 <?php
+//ge build
 $url = 'http://127.0.0.1/';
 $url = strtolower($url);
 $dns = 'localhost';
